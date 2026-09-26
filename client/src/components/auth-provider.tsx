@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import { apiRequest } from "@/lib/queryClient";
 
 interface AuthUser {
   id: number;
@@ -26,38 +25,79 @@ const AuthContext = createContext<AuthContextValue>({
   logout: async () => {},
 });
 
+// In-memory token storage (persists during session, not across refreshes)
+let authToken: string | null = null;
+
+export function getAuthToken(): string | null {
+  return authToken;
+}
+
+function setAuthToken(token: string | null) {
+  authToken = token;
+}
+
+// Token-aware fetch helper
+async function authFetch(method: string, url: string, data?: unknown): Promise<Response> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+  if (data) headers["Content-Type"] = "application/json";
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: data ? JSON.stringify(data) : undefined,
+  });
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.statusText);
+    throw new Error(err || res.statusText);
+  }
+  return res;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Check auth state on mount
   useEffect(() => {
-    apiRequest("GET", "/api/auth/me")
-      .then((res) => {
-        if (res.ok) return res.json();
-        return null;
-      })
+    const token = getAuthToken();
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+    authFetch("GET", "/api/auth/me")
+      .then((res) => res.json())
       .then((data) => {
-        if (data) setUser(data);
+        if (data && !data.error) setUser(data);
+        else setAuthToken(null);
       })
-      .catch(() => {})
+      .catch(() => {
+        setAuthToken(null);
+      })
       .finally(() => setIsLoading(false));
   }, []);
 
   const login = useCallback(async (username: string, password: string) => {
-    const res = await apiRequest("POST", "/api/auth/login", { username, password });
+    const res = await authFetch("POST", "/api/auth/login", { username, password });
     const data = await res.json();
+    setAuthToken(data.token);
     setUser(data);
   }, []);
 
   const signup = useCallback(async (username: string, password: string, displayName: string) => {
-    const res = await apiRequest("POST", "/api/auth/signup", { username, password, displayName });
+    const res = await authFetch("POST", "/api/auth/signup", { username, password, displayName });
     const data = await res.json();
+    setAuthToken(data.token);
     setUser(data);
   }, []);
 
   const logout = useCallback(async () => {
-    await apiRequest("POST", "/api/auth/logout");
+    try {
+      await authFetch("POST", "/api/auth/logout");
+    } catch {}
+    setAuthToken(null);
     setUser(null);
   }, []);
 
@@ -71,3 +111,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
+
+export { authFetch };

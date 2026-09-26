@@ -1,9 +1,9 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import type { Server } from "node:http";
-import session from "express-session";
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { storage } from "./storage";
-import { insertReportSchema, insertCommentSchema, insertUserSchema, safeUser } from "@shared/schema";
+import { insertReportSchema, insertCommentSchema, safeUser } from "@shared/schema";
 import { z } from "zod";
 
 // --- Rate Limiter (in-memory, IP-based) ---
@@ -40,17 +40,36 @@ setInterval(() => {
   }
 }, 300000);
 
-// --- Auth Middleware ---
-declare module "express-session" {
-  interface SessionData {
-    userId?: number;
+// --- Token-based Auth ---
+const TOKEN_SECRET = process.env.SESSION_SECRET || "bad-drivers-of-america-secret-key-2024";
+const activeTokens = new Map<string, { userId: number; expiresAt: number }>();
+
+function generateToken(userId: number): string {
+  const token = crypto.randomBytes(32).toString("hex");
+  activeTokens.set(token, { userId, expiresAt: Date.now() + 1000 * 60 * 60 * 24 * 7 }); // 7 days
+  return token;
+}
+
+function getUserIdFromToken(req: Request): number | null {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return null;
   }
+  const token = authHeader.substring(7);
+  const entry = activeTokens.get(token);
+  if (!entry || Date.now() > entry.expiresAt) {
+    if (entry) activeTokens.delete(token);
+    return null;
+  }
+  return entry.userId;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
-  if (!req.session.userId) {
+  const userId = getUserIdFromToken(req);
+  if (!userId) {
     return res.status(401).json({ error: "Authentication required. Please log in." });
   }
+  (req as any).userId = userId;
   next();
 }
 
@@ -58,22 +77,6 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Session middleware — __Host- prefix required for published sandbox (served over HTTPS)
-  app.use(
-    session({
-      name: "__Host-sid",
-      secret: process.env.SESSION_SECRET || "bad-drivers-of-america-secret-key-2024",
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        secure: true,
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      },
-    })
-  );
 
   // ===== AUTH ROUTES =====
 
@@ -101,8 +104,8 @@ export async function registerRoutes(
         displayName: displayName?.trim() || "Anonymous Driver",
       });
 
-      req.session.userId = user.id;
-      res.status(201).json(safeUser(user));
+      const token = generateToken(user.id);
+      res.status(201).json({ ...safeUser(user), token });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -127,8 +130,8 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Invalid username or password" });
       }
 
-      req.session.userId = user.id;
-      res.json(safeUser(user));
+      const token = generateToken(user.id);
+      res.json({ ...safeUser(user), token });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -136,19 +139,22 @@ export async function registerRoutes(
 
   // Logout
   app.post("/api/auth/logout", (req, res) => {
-    req.session.destroy(() => {
-      res.json({ success: true });
-    });
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      activeTokens.delete(token);
+    }
+    res.json({ success: true });
   });
 
   // Get current user
   app.get("/api/auth/me", async (req, res) => {
-    if (!req.session.userId) {
+    const userId = getUserIdFromToken(req);
+    if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
-    const user = await storage.getUserById(req.session.userId);
+    const user = await storage.getUserById(userId);
     if (!user) {
-      req.session.destroy(() => {});
       return res.status(401).json({ error: "Not authenticated" });
     }
     res.json(safeUser(user));
@@ -186,7 +192,7 @@ export async function registerRoutes(
       const validated = insertReportSchema.parse(req.body);
       const report = await storage.createReport({
         ...validated,
-        userId: req.session.userId,
+        userId: (req as any).userId,
       });
       res.status(201).json(report);
     } catch (err: any) {
@@ -239,7 +245,7 @@ export async function registerRoutes(
       const validated = insertCommentSchema.parse({ ...req.body, reportId });
       const comment = await storage.createComment({
         ...validated,
-        userId: req.session.userId,
+        userId: (req as any).userId,
       });
       await storage.incrementComments(reportId);
       res.status(201).json(comment);
