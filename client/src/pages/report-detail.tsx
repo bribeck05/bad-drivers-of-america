@@ -2,13 +2,14 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useParams } from "wouter";
+import { useAuth } from "@/components/auth-provider";
+import { Link, useParams, useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, MapPin, ThumbsUp, ThumbsDown, MessageCircle, Eye, Clock, Car, Send } from "lucide-react";
+import { ArrowLeft, MapPin, ThumbsUp, ThumbsDown, MessageCircle, Eye, Clock, Car, Send, Lock } from "lucide-react";
 import type { Report, Comment } from "@shared/schema";
 import { INCIDENT_LABELS, INCIDENT_COLORS, formatTimeAgo } from "@/lib/utils";
 
@@ -17,8 +18,11 @@ export default function ReportDetail() {
   const id = parseInt(params.id || "0");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isAuthenticated, user } = useAuth();
+  const [, setLocation] = useLocation();
   const [commentText, setCommentText] = useState("");
-  const [commentAuthor, setCommentAuthor] = useState("Anonymous Driver");
+
+  const commentAuthor = user?.displayName || "Anonymous Driver";
 
   const { data: report, isLoading } = useQuery<Report>({
     queryKey: ["/api/reports", id],
@@ -88,7 +92,7 @@ export default function ReportDetail() {
     e.preventDefault();
     if (!commentText.trim()) return;
     commentMutation.mutate({
-      authorName: commentAuthor.trim() || "Anonymous Driver",
+      authorName: commentAuthor,
       content: commentText.trim(),
     });
   };
@@ -189,7 +193,10 @@ export default function ReportDetail() {
           variant="outline"
           size="sm"
           data-testid="button-upvote"
-          onClick={() => upvoteMutation.mutate()}
+          onClick={() => {
+            if (!isAuthenticated) { setLocation("/auth"); return; }
+            upvoteMutation.mutate();
+          }}
           disabled={upvoteMutation.isPending}
           className="flex items-center gap-1.5"
         >
@@ -200,7 +207,10 @@ export default function ReportDetail() {
           variant="outline"
           size="sm"
           data-testid="button-downvote"
-          onClick={() => downvoteMutation.mutate()}
+          onClick={() => {
+            if (!isAuthenticated) { setLocation("/auth"); return; }
+            downvoteMutation.mutate();
+          }}
           disabled={downvoteMutation.isPending}
           className="flex items-center gap-1.5"
         >
@@ -226,33 +236,35 @@ export default function ReportDetail() {
           <span className="text-sm text-muted-foreground font-normal">({report.commentCount})</span>
         </h2>
 
-        {/* Comment form */}
-        <form onSubmit={handleComment} className="space-y-2">
-          <Input
-            data-testid="input-comment-author"
-            placeholder="Your name (optional)"
-            value={commentAuthor}
-            onChange={(e) => setCommentAuthor(e.target.value)}
-            maxLength={50}
-          />
-          <div className="flex gap-2">
-            <Input
-              data-testid="input-comment-text"
-              placeholder="Add a comment..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              maxLength={300}
-            />
-            <Button
-              type="submit"
-              size="icon"
-              data-testid="button-submit-comment"
-              disabled={commentMutation.isPending || !commentText.trim()}
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
-        </form>
+        {/* Comment form or login prompt */}
+        {isAuthenticated ? (
+          <form onSubmit={handleComment} className="space-y-2">
+            <div className="flex gap-2">
+              <Input
+                data-testid="input-comment-text"
+                placeholder="Add a comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                maxLength={300}
+              />
+              <Button
+                type="submit"
+                size="icon"
+                data-testid="button-submit-comment"
+                disabled={commentMutation.isPending || !commentText.trim()}
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <Link href="/auth" className="block">
+            <div className="flex items-center gap-2 px-3 py-3 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:bg-accent transition-colors">
+              <Lock className="w-4 h-4" />
+              <span>Sign in to add a comment</span>
+            </div>
+          </Link>
+        )}
 
         {/* Comment list */}
         {commentsLoading ? (

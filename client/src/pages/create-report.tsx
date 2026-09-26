@@ -3,12 +3,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useAuth } from "@/components/auth-provider";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Camera, Video, X, MapPin, Car, Upload } from "lucide-react";
+import { Camera, Video, X, MapPin, Car, Upload, ShieldCheck } from "lucide-react";
 import type { InsertReport } from "@shared/schema";
 
 const INCIDENT_TYPES = [
@@ -35,7 +36,6 @@ export default function CreateReport() {
   const [location, setLocation] = useState("");
   const [state, setState] = useState("");
   const [incidentType, setIncidentType] = useState("reckless");
-  const [authorName, setAuthorName] = useState("Anonymous Driver");
   const [mediaData, setMediaData] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<"photo" | "video">("photo");
 
@@ -44,6 +44,9 @@ export default function CreateReport() {
   const { toast } = useToast();
   const [, setLocation2] = useLocation();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  const authorName = user?.displayName || "Anonymous Driver";
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertReport) => {
@@ -91,7 +94,7 @@ export default function CreateReport() {
       mediaType,
       mediaData: mediaData || undefined,
       incidentType,
-      authorName: authorName.trim() || "Anonymous Driver",
+      authorName: authorName,
     });
   };
 
@@ -291,17 +294,10 @@ export default function CreateReport() {
         </select>
       </div>
 
-      {/* Author Name */}
-      <div>
-        <Label htmlFor="author" className="text-sm font-semibold mb-1.5 block">Your Name (optional)</Label>
-        <Input
-          id="author"
-          data-testid="input-author"
-          placeholder="Anonymous Driver"
-          value={authorName}
-          onChange={(e) => setAuthorName(e.target.value)}
-          maxLength={50}
-        />
+      {/* Author info banner */}
+      <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-accent text-sm">
+        <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+        <span className="text-muted-foreground">Posting as <span className="font-semibold text-foreground">{authorName}</span></span>
       </div>
 
       {/* Submit */}

@@ -1,8 +1,20 @@
 import { useTheme } from "@/components/theme-provider";
-import { Moon, Sun } from "lucide-react";
+import { useAuth } from "@/components/auth-provider";
+import { useLocation } from "wouter";
+import { Moon, Sun, LogIn, LogOut, User } from "lucide-react";
 
 export function TopBar() {
   const { theme, toggleTheme } = useTheme();
+  const { user, isAuthenticated, logout } = useAuth();
+  const [, setLocation] = useLocation();
+
+  const handleAuthClick = () => {
+    if (isAuthenticated) {
+      logout();
+    } else {
+      setLocation("/auth");
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-lg border-b border-border">
@@ -21,18 +33,42 @@ export function TopBar() {
             <span className="text-[10px] text-muted-foreground font-medium tracking-widest uppercase">of America</span>
           </div>
         </div>
-        <button
-          onClick={toggleTheme}
-          data-testid="button-theme-toggle"
-          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-        >
-          {theme === "dark" ? (
-            <Sun className="w-5 h-5" />
-          ) : (
-            <Moon className="w-5 h-5" />
-          )}
-        </button>
+        <div className="flex items-center gap-1">
+          {/* Auth button */}
+          <button
+            onClick={handleAuthClick}
+            data-testid="button-auth"
+            aria-label={isAuthenticated ? "Log out" : "Log in"}
+            className="flex items-center gap-1.5 px-2.5 h-9 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            {isAuthenticated ? (
+              <>
+                <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center text-[10px] font-bold text-primary">
+                  {user?.displayName?.charAt(0).toUpperCase() || "U"}
+                </div>
+                <LogOut className="w-3.5 h-3.5" />
+              </>
+            ) : (
+              <>
+                <LogIn className="w-4 h-4" />
+                <span>Sign In</span>
+              </>
+            )}
+          </button>
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            data-testid="button-theme-toggle"
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            {theme === "dark" ? (
+              <Sun className="w-5 h-5" />
+            ) : (
+              <Moon className="w-5 h-5" />
+            )}
+          </button>
+        </div>
       </div>
     </header>
   );

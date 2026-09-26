@@ -2,6 +2,15 @@ import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import type * as z from "zod/mini";
 
+// Users table — authentication
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  username: text("username").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  displayName: text("display_name").notNull().default("Anonymous Driver"),
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+});
+
 // Reports table — the core entity of Bad Drivers of America
 export const reports = sqliteTable("reports", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -16,6 +25,7 @@ export const reports = sqliteTable("reports", {
   mediaData: text("media_data"), // base64 data URL
   incidentType: text("incident_type").notNull().default("reckless"), // reckless, speeding, parking, texting, road-rage, other
   authorName: text("author_name").notNull().default("Anonymous Driver"),
+  userId: integer("user_id"), // nullable foreign key to users
   upvotes: integer("upvotes").notNull().default(0),
   downvotes: integer("downvotes").notNull().default(0),
   views: integer("views").notNull().default(0),
@@ -28,6 +38,7 @@ export const comments = sqliteTable("comments", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   reportId: integer("report_id").notNull(),
   authorName: text("author_name").notNull().default("Anonymous Driver"),
+  userId: integer("user_id"),
   content: text("content").notNull(),
   createdAt: text("created_at").notNull().default(new Date().toISOString()),
 });
@@ -40,6 +51,12 @@ export const plateLookups = sqliteTable("plate_lookups", {
   lastLookedUp: text("last_looked_up").notNull().default(new Date().toISOString()),
 });
 
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  passwordHash: true,
+  createdAt: true,
+});
+
 export const insertReportSchema = createInsertSchema(reports).omit({
   id: true,
   upvotes: true,
@@ -47,15 +64,25 @@ export const insertReportSchema = createInsertSchema(reports).omit({
   views: true,
   commentCount: true,
   createdAt: true,
+  userId: true,
 });
 
 export const insertCommentSchema = createInsertSchema(comments).omit({
   id: true,
   createdAt: true,
+  userId: true,
 });
 
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
 export type InsertReport = z.infer<typeof insertReportSchema>;
 export type Report = typeof reports.$inferSelect;
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type Comment = typeof comments.$inferSelect;
 export type PlateLookup = typeof plateLookups.$inferSelect;
+
+// Safe user (without password hash) for API responses
+export function safeUser(user: User): Omit<User, "passwordHash"> {
+  const { passwordHash: _ph, ...rest } = user;
+  return rest;
+}

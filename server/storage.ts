@@ -1,27 +1,76 @@
-import { reports, comments, plateLookups } from '@shared/schema';
-import type { Report, InsertReport, Comment, InsertComment } from '@shared/schema';
+import { reports, comments, plateLookups, users } from '@shared/schema';
+import type { Report, InsertReport, Comment, InsertComment, User, InsertUser } from '@shared/schema';
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 const sqlite = new Database("data.db");
 sqlite.pragma("journal_mode = WAL");
 
 export const db = drizzle(sqlite);
 
+// Auto-create tables on first run
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    display_name TEXT NOT NULL DEFAULT 'Anonymous Driver',
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    license_plate TEXT NOT NULL,
+    make TEXT,
+    model TEXT,
+    location TEXT NOT NULL,
+    state TEXT,
+    media_type TEXT NOT NULL DEFAULT 'photo',
+    media_data TEXT,
+    incident_type TEXT NOT NULL DEFAULT 'reckless',
+    author_name TEXT NOT NULL DEFAULT 'Anonymous Driver',
+    user_id INTEGER,
+    upvotes INTEGER NOT NULL DEFAULT 0,
+    downvotes INTEGER NOT NULL DEFAULT 0,
+    views INTEGER NOT NULL DEFAULT 0,
+    comment_count INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    report_id INTEGER NOT NULL,
+    author_name TEXT NOT NULL DEFAULT 'Anonymous Driver',
+    user_id INTEGER,
+    content TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS plate_lookups (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    license_plate TEXT NOT NULL,
+    lookup_count INTEGER NOT NULL DEFAULT 0,
+    last_looked_up TEXT NOT NULL
+  );
+`);
+
 export interface IStorage {
+  // Users
+  createUser(user: InsertUser & { passwordHash: string }): Promise<User>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserById(id: number): Promise<User | undefined>;
   // Reports
   getAllReports(): Promise<Report[]>;
   getReport(id: number): Promise<Report | undefined>;
   getReportsByPlate(plate: string): Promise<Report[]>;
-  createReport(report: InsertReport): Promise<Report>;
+  createReport(report: InsertReport & { userId?: number }): Promise<Report>;
   upvoteReport(id: number): Promise<Report | undefined>;
   downvoteReport(id: number): Promise<Report | undefined>;
   incrementViews(id: number): Promise<void>;
   incrementComments(id: number): Promise<void>;
   // Comments
   getComments(reportId: number): Promise<Comment[]>;
-  createComment(comment: InsertComment): Promise<Comment>;
+  createComment(comment: InsertComment & { userId?: number }): Promise<Comment>;
   // Plate lookup
   lookupPlate(plate: string): Promise<{ reports: Report[]; lookupCount: number }>;
   // Stats
@@ -29,6 +78,24 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Users
+  async createUser(user: InsertUser & { passwordHash: string }): Promise<User> {
+    return db.insert(users).values({
+      username: user.username,
+      passwordHash: user.passwordHash,
+      displayName: user.displayName || "Anonymous Driver",
+    }).returning().get();
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return db.select().from(users).where(eq(users.username, username)).get();
+  }
+
+  async getUserById(id: number): Promise<User | undefined> {
+    return db.select().from(users).where(eq(users.id, id)).get();
+  }
+
+  // Reports
   async getAllReports(): Promise<Report[]> {
     return db.select().from(reports).orderBy(desc(reports.createdAt)).all();
   }
@@ -41,7 +108,7 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(reports).where(eq(reports.licensePlate, plate.toUpperCase())).orderBy(desc(reports.createdAt)).all();
   }
 
-  async createReport(report: InsertReport): Promise<Report> {
+  async createReport(report: InsertReport & { userId?: number }): Promise<Report> {
     const data = { ...report, licensePlate: report.licensePlate.toUpperCase() };
     return db.insert(reports).values(data).returning().get();
   }
@@ -78,7 +145,7 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(comments).where(eq(comments.reportId, reportId)).orderBy(desc(comments.createdAt)).all();
   }
 
-  async createComment(comment: InsertComment): Promise<Comment> {
+  async createComment(comment: InsertComment & { userId?: number }): Promise<Comment> {
     return db.insert(comments).values(comment).returning().get();
   }
 
