@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Bad Drivers of America</string>
+    <string name="title_activity_main">Bad Drivers of America</string>
+    <string name="package_name">com.baddrivers.america</string>
+    <string name="custom_url_scheme">com.baddrivers.america</string>
+</resources>

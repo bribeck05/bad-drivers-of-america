@@ -21,8 +21,11 @@ export default function ReportDetail() {
   const { isAuthenticated, user } = useAuth();
   const [, setLocation] = useLocation();
   const [commentText, setCommentText] = useState("");
+  const [commentAuthorInput, setCommentAuthorInput] = useState("");
 
-  const commentAuthor = user?.displayName || "Anonymous Driver";
+  const commentAuthor = isAuthenticated
+    ? (user?.displayName || "Anonymous Driver")
+    : (commentAuthorInput.trim() || "Anonymous Driver");
 
   const { data: report, isLoading } = useQuery<Report>({
     queryKey: ["/api/reports", id],
@@ -236,35 +239,36 @@ export default function ReportDetail() {
           <span className="text-sm text-muted-foreground font-normal">({report.commentCount})</span>
         </h2>
 
-        {/* Comment form or login prompt */}
-        {isAuthenticated ? (
-          <form onSubmit={handleComment} className="space-y-2">
-            <div className="flex gap-2">
-              <Input
-                data-testid="input-comment-text"
-                placeholder="Add a comment..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                maxLength={300}
-              />
-              <Button
-                type="submit"
-                size="icon"
-                data-testid="button-submit-comment"
-                disabled={commentMutation.isPending || !commentText.trim()}
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-          </form>
-        ) : (
-          <Link href="/auth" className="block">
-            <div className="flex items-center gap-2 px-3 py-3 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:bg-accent transition-colors">
-              <Lock className="w-4 h-4" />
-              <span>Sign in to add a comment</span>
-            </div>
-          </Link>
-        )}
+        {/* Comment form — open to all */}
+        <form onSubmit={handleComment} className="space-y-2">
+          {!isAuthenticated && (
+            <Input
+              data-testid="input-comment-name"
+              placeholder="Your name (optional)"
+              value={commentAuthorInput}
+              onChange={(e) => setCommentAuthorInput(e.target.value)}
+              maxLength={50}
+              className="text-sm"
+            />
+          )}
+          <div className="flex gap-2">
+            <Input
+              data-testid="input-comment-text"
+              placeholder="Add a comment..."
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              maxLength={300}
+            />
+            <Button
+              type="submit"
+              size="icon"
+              data-testid="button-submit-comment"
+              disabled={commentMutation.isPending || !commentText.trim()}
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+        </form>
 
         {/* Comment list */}
         {commentsLoading ? (

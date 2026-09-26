@@ -238,14 +238,22 @@ export async function registerRoutes(
     }
   });
 
-  // Add a comment (auth required)
-  app.post("/api/reports/:id/comments", requireAuth, rateLimit(60000, 15), async (req, res) => {
+  // Add a comment (open to all — auth optional, anonymous allowed)
+  app.post("/api/reports/:id/comments", rateLimit(60000, 15), async (req, res) => {
     try {
       const reportId = parseInt(req.params.id);
-      const validated = insertCommentSchema.parse({ ...req.body, reportId });
+      const userId = getUserIdFromToken(req); // null if not logged in
+      const { content, authorName } = req.body;
+
+      if (!content || typeof content !== "string" || content.trim().length === 0) {
+        return res.status(400).json({ error: "Comment cannot be empty" });
+      }
+
       const comment = await storage.createComment({
-        ...validated,
-        userId: (req as any).userId,
+        reportId,
+        content: content.trim(),
+        authorName: (authorName || "Anonymous Driver").trim().substring(0, 50),
+        userId: userId || undefined,
       });
       await storage.incrementComments(reportId);
       res.status(201).json(comment);
