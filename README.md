@@ -141,4 +141,4 @@ npx cap open ios            # Open in Xcode
 
 ## License
 
-Private project. All rights reserved.
+This project is licensed under the MIT License — see [LICENSE](LICENSE) for details. Anyone is free to use, copy, modify, and distribute this software.
