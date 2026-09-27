@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+    background: #f1f5f9;
+    display: flex;
+    gap: 40px;
+    padding: 40px;
+    align-items: flex-start;
+  }
+  .phone {
+    width: 320px;
+    height: 640px;
+    border-radius: 44px;
+    background: #0f172a;
+    padding: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    position: relative;
+  }
+  .screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 32px;
+    overflow: hidden;
+    position: relative;
+  }
+  /* Status bar */
+  .status-bar {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  /* Safari browser bar */
+  .browser-bar {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    gap: 8px;
+  }
+  .browser-bar .url {
+    flex: 1;
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 8px 14px;
+    font-size: 13px;
+    text-align: center;
+  }
+  /* Share sheet */
+  .share-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 16px 16px 0 0;
+    padding: 16px;
+    animation: none;
+  }
+  .share-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 16px;
+  }
+  .share-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  .share-row {
+    display: flex;
+    gap: 16px;
+    padding: 8px 0;
+    justify-content: flex-start;
+  }
+  .share-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 64px;
+  }
+  .share-item-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+  .share-item-label {
+    font-size: 11px;
+  }
+  .actions-row {
+    display: flex;
+    gap: 16px;
+    padding: 16px 0 8px;
+    justify-content: flex-start;
+    overflow: hidden;
+  }
+  .action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 64px;
+  }
+  .action-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+  .action-label {
+    font-size: 11px;
+  }
+  /* Home screen */
+  .home-screen {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 24px 16px;
+  }
+  .home-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .home-icon-img {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+  .home-icon-label {
+    font-size: 11px;
+    text-align: center;
+  }
+  /* Caption */
+  .caption {
+    position: absolute;
+    bottom: -50px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+  .caption-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #0f172a;
+    color: white;
+    font-size: 14px;
+    margin-right: 8px;
+  }
+  /* Theme colors */
+  .ios-dark { background: #1c1c1e; color: #fff; }
+  .ios-light { background: #f2f2f7; color: #000; }
+  .android-dark { background: #1a1a2e; color: #fff; }
+  .accent-blue { background: #007aff; color: white; }
+  .accent-green { background: #34c759; color: white; }
+  .accent-orange { background: #ff9500; color: white; }
+  .accent-red { background: #ff3b30; color: white; }
+  .accent-purple { background: #af52de; color: white; }
+  .accent-teal { background: #5ac8fa; color: white; }
+  .accent-indigo { background: #5856d6; color: white; }
+  .accent-pink { background: #ff2d55; color: white; }
+  .accent-yellow { background: #ffcc00; color: white; }
+  .gray-1 { background: #8e8e93; color: white; }
+  .gray-2 { background: #48484a; color: white; }
+  .gray-3 { background: #3a3a3c; color: white; }
+  .gray-light { background: #e5e5ea; color: #000; }
+  .app-brand { background: #0f172a; color: white; }
+  .highlight-ring {
+    box-shadow: 0 0 0 3px #007aff, 0 0 0 6px rgba(0,122,255,0.3);
+  }
+</style>
+</head>
+<body>
+
+<!-- ====== IPHONE STEP 1: Safari with URL ====== -->
+<div class="phone">
+  <div class="screen ios-dark">
+    <div class="status-bar ios-dark">
+      <span>9:41</span>
+      <span>📶 🔋</span>
+    </div>
+    <div class="browser-bar ios-dark">
+      <span style="font-size:18px">‹</span>
+      <span style="font-size:18px">›</span>
+      <div class="url">🔒 bad-drivers-of-america.pplx.app</div>
+      <div style="width:28px;height:28px;border-radius:50%;background:#007aff;display:flex;align-items:center;justify-content:center;font-size:13px">↗</div>
+    </div>
+    <div style="padding:16px">
+      <div style="background:#0f172a;border-radius:16px;padding:20px;text-align:center">
+        <div style="width:56px;height:56px;border-radius:14px;background:#dc2626;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:28px">🚗</div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:4px">Bad Drivers of America</div>
+        <div style="font-size:13px;color:#94a3b8;margin-bottom:16px">Live Feed • 42 reports</div>
+        <div style="background:#1e293b;border-radius:12px;padding:12px;margin-bottom:8px">
+          <div style="font-size:12px;color:#f59e0b;font-weight:600;margin-bottom:4px">⚡ Browsing as Guest</div>
+          <div style="font-size:11px;color:#3b82f6">Sign in to interact →</div>
+        </div>
+        <div style="background:#1e293b;border-radius:12px;padding:12px;margin-bottom:8px">
+          <div style="height:80px;background:#334155;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;font-size:28px">📸</div>
+          <div style="font-size:12px;font-weight:600;color:#fff">Reckless driving on I-40</div>
+          <div style="font-size:11px;color:#94a3b8">Raleigh, NC • 2h ago</div>
+        </div>
+        <div style="background:#1e293b;border-radius:12px;padding:12px">
+          <div style="height:80px;background:#334155;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;font-size:28px">🚙</div>
+          <div style="font-size:12px;font-weight:600;color:#fff">Speeding through school zone</div>
+          <div style="font-size:11px;color:#94a3b8">Durham, NC • 5h ago</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="caption"><span class="caption-num">1</span>Open in Safari</div>
+</div>
+
+<!-- ====== IPHONE STEP 2: Share Sheet ====== -->
+<div class="phone">
+  <div class="screen ios-dark">
+    <div class="status-bar ios-dark">
+      <span>9:41</span>
+      <span>📶 🔋</span>
+    </div>
+    <div style="padding:16px;opacity:0.3">
+      <div style="background:#0f172a;border-radius:16px;padding:20px;text-align:center">
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:16px">Bad Drivers of America</div>
+        <div style="background:#1e293b;border-radius:12px;padding:12px;margin-bottom:8px;height:100px"></div>
+        <div style="background:#1e293b;border-radius:12px;padding:12px;height:100px"></div>
+      </div>
+    </div>
+    <div class="share-sheet ios-dark" style="background:#2c2c2e">
+      <div class="share-header">
+        <div class="share-icon app-brand">🚗</div>
+        <div>
+          <div style="font-size:14px;font-weight:600">bad-drivers-of-america.pplx.app</div>
+          <div style="font-size:12px;color:#8e8e93">Bad Drivers of America</div>
+        </div>
+      </div>
+      <div class="share-row">
+        <div class="share-item"><div class="share-item-icon accent-blue">👤</div><div class="share-item-label">AirDrop</div></div>
+        <div class="share-item"><div class="share-item-icon accent-green">💬</div><div class="share-item-label">Messages</div></div>
+        <div class="share-item"><div class="share-item-icon accent-blue">✉️</div><div class="share-item-label">Mail</div></div>
+        <div class="share-item"><div class="share-item-icon accent-yellow">📝</div><div class="share-item-label">Notes</div></div>
+      </div>
+      <div class="actions-row">
+        <div class="action-item"><div class="action-icon gray-3">📋</div><div class="action-label">Copy</div></div>
+        <div class="action-item"><div class="action-icon gray-3">📝</div><div class="action-label">New Quick Note</div></div>
+        <div class="action-item"><div class="action-icon gray-3">📁</div><div class="action-label">Save to Files</div></div>
+        <div class="action-item"><div class="action-icon gray-3">⋯</div><div class="action-label">More</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="caption"><span class="caption-num">2</span>Tap the Share button</div>
+</div>
+
+<!-- ====== IPHONE STEP 3: Add to Home Screen ====== -->
+<div class="phone">
+  <div class="screen ios-dark">
+    <div class="status-bar ios-dark">
+      <span>9:41</span>
+      <span>📶 🔋</span>
+    </div>
+    <div style="padding:16px;opacity:0.2">
+      <div style="background:#0f172a;border-radius:16px;padding:20px;text-align:center">
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:16px">Bad Drivers of America</div>
+        <div style="background:#1e293b;border-radius:12px;padding:12px;margin-bottom:8px;height:100px"></div>
+      </div>
+    </div>
+    <div class="share-sheet ios-dark" style="background:#2c2c2e">
+      <div class="share-header">
+        <div class="share-icon app-brand">🚗</div>
+        <div>
+          <div style="font-size:14px;font-weight:600">Add to Home Screen</div>
+          <div style="font-size:12px;color:#8e8e93">bad-drivers-of-america.pplx.app</div>
+        </div>
+      </div>
+      <div style="padding:16px 0;display:flex;gap:12px;align-items:center">
+        <div style="width:56px;height:56px;border-radius:14px;background:#dc2626;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🚗</div>
+        <input style="flex:1;background:#48484a;border:none;border-radius:12px;padding:12px 16px;color:#fff;font-size:15px" value="Bad Drivers of America" readonly>
+      </div>
+      <div style="display:flex;gap:12px;padding:12px 0 8px">
+        <div style="flex:1;text-align:center;padding:14px;background:#48484a;border-radius:14px;font-size:16px;font-weight:600;color:#fff">Cancel</div>
+        <div style="flex:1;text-align:center;padding:14px;background:#0a84ff;border-radius:14px;font-size:16px;font-weight:600;color:#fff">Add</div>
+      </div>
+    </div>
+  </div>
+  <div class="caption"><span class="caption-num">3</span>Tap "Add to Home Screen"</div>
+</div>
+
+<!-- ====== IPHONE STEP 4: Home Screen with App Icon ====== -->
+<div class="phone">
+  <div class="screen ios-light">
+    <div class="status-bar ios-light">
+      <span>9:41</span>
+      <span>📶 🔋</span>
+    </div>
+    <div class="home-screen">
+      <div class="home-icon"><div class="home-icon-img accent-blue">📧</div><div class="home-icon-label">Mail</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-green">📷</div><div class="home-icon-label">Camera</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-purple">🎵</div><div class="home-icon-label">Music</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-orange">📅</div><div class="home-icon-label">Calendar</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-red">⏰</div><div class="home-icon-label">Clock</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-teal">🗺️</div><div class="home-icon-label">Maps</div></div>
+      <div class="home-icon"><div class="home-icon-img gray-1">⚙️</div><div class="home-icon-label">Settings</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-indigo">💳</div><div class="home-icon-label">Wallet</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-blue">📱</div><div class="home-icon-label">Phone</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-green">💬</div><div class="home-icon-label">Messages</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-pink">📸</div><div class="home-icon-label">Photos</div></div>
+      <div class="home-icon"><div class="home-icon-img app-brand highlight-ring">🚗</div><div class="home-icon-label" style="font-weight:700">Bad Drivers</div></div>
+    </div>
+  </div>
+  <div class="caption"><span class="caption-num">4</span>App icon on home screen</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Roboto', 'Segoe UI', -apple-system, sans-serif;
+    background: #f1f5f9;
+    display: flex;
+    gap: 40px;
+    padding: 40px;
+    align-items: flex-start;
+  }
+  .phone {
+    width: 320px;
+    height: 640px;
+    border-radius: 44px;
+    background: #0f172a;
+    padding: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    position: relative;
+  }
+  .screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 32px;
+    overflow: hidden;
+    position: relative;
+  }
+  .status-bar {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .browser-bar {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .browser-bar .url {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 13px;
+    text-align: center;
+  }
+  /* Menu */
+  .menu {
+    position: absolute;
+    top: 48px;
+    right: 8px;
+    border-radius: 12px;
+    padding: 8px 0;
+    min-width: 200px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+  .menu-item.highlight {
+    background: rgba(0,122,255,0.15);
+    border-radius: 0;
+  }
+  /* Home screen */
+  .home-screen {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 32px 16px;
+  }
+  .home-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .home-icon-img {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+  .home-icon-label {
+    font-size: 11px;
+    text-align: center;
+  }
+  /* Caption */
+  .caption {
+    position: absolute;
+    bottom: -50px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+  .caption-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #0f172a;
+    color: white;
+    font-size: 14px;
+    margin-right: 8px;
+  }
+  /* Theme */
+  .android-dark { background: #1a1a2e; color: #fff; }
+  .android-light { background: #f5f5f5; color: #000; }
+  .accent-blue { background: #4285f4; color: white; }
+  .accent-green { background: #34a853; color: white; }
+  .accent-orange { background: #ff6d00; color: white; }
+  .accent-red { background: #ea4335; color: white; }
+  .accent-yellow { background: #fbbc04; color: white; }
+  .accent-purple { background: #7c4dff; color: white; }
+  .accent-teal { background: #00acc1; color: white; }
+  .accent-indigo { background: #3f51b5; color: white; }
+  .accent-pink { background: #e91e63; color: white; }
+  .gray-1 { background: #5f6368; color: white; }
+  .gray-2 { background: #3c4043; color: white; }
+  .gray-3 { background: #2d2d2d; color: white; }
+  .gray-light { background: #e8eaed; color: #000; }
+  .app-brand { background: #0f172a; color: white; }
+  .highlight-ring {
+    box-shadow: 0 0 0 3px #4285f4, 0 0 0 6px rgba(66,133,244,0.3);
+  }
+</style>
+</head>
+<body>
+
+<!-- ====== ANDROID STEP 1: Chrome with URL ====== -->
+<div class="phone">
+  <div class="screen android-dark">
+    <div class="status-bar android-dark">
+      <span>9:41</span>
+      <span>📶 🔋</span>
+    </div>
+    <div class="browser-bar android-dark">
+      <span style="font-size:16px;color:#8e8e93">‹</span>
+      <span style="font-size:16px;color:#8e8e93">›</span>
+      <div class="url">🔒 bad-drivers-of-america.pplx.app</div>
+      <div style="font-size:18px;color:#8e8e93">⋮</div>
+    </div>
+    <div style="padding:16px">
+      <div style="background:#0f172a;border-radius:16px;padding:20px;text-align:center">
+        <div style="width:56px;height:56px;border-radius:14px;background:#dc2626;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:28px">🚗</div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:4px">Bad Drivers of America</div>
+        <div style="font-size:13px;color:#94a3b8;margin-bottom:16px">Live Feed • 42 reports</div>
+        <div style="background:#1e293b;border-radius:12px;padding:12px;margin-bottom:8px">
+          <div style="font-size:12px;color:#f59e0b;font-weight:600;margin-bottom:4px">⚡ Browsing as Guest</div>
+          <div style="font-size:11px;color:#3b82f6">Sign in to interact →</div>
+        </div>
+        <div style="background:#1e293b;border-radius:12px;padding:12px;margin-bottom:8px">
+          <div style="height:80px;background:#334155;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;font-size:28px">📸</div>
+          <div style="font-size:12px;font-weight:600;color:#fff">Reckless driving on I-40</div>
+          <div style="font-size:11px;color:#94a3b8">Raleigh, NC • 2h ago</div>
+        </div>
+        <div style="background:#1e293b;border-radius:12px;padding:12px">
+          <div style="height:80px;background:#334155;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;font-size:28px">🚙</div>
+          <div style="font-size:12px;font-weight:600;color:#fff">Speeding through school zone</div>
+          <div style="font-size:11px;color:#94a3b8">Durham, NC • 5h ago</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="caption"><span class="caption-num">1</span>Open in Chrome</div>
+</div>
+
+<!-- ====== ANDROID STEP 2: Three-dot menu ====== -->
+<div class="phone">
+  <div class="screen android-dark">
+    <div class="status-bar android-dark">
+      <span>9:41</span>
+      <span>📶 🔋</span>
+    </div>
+    <div class="browser-bar android-dark">
+      <span style="font-size:16px;color:#8e8e93">‹</span>
+      <span style="font-size:16px;color:#8e8e93">›</span>
+      <div class="url">🔒 bad-drivers-of-america.pplx.app</div>
+      <div style="font-size:18px;color:#fff">⋮</div>
+    </div>
+    <div style="padding:16px;opacity:0.3">
+      <div style="background:#0f172a;border-radius:16px;padding:20px;text-align:center">
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:16px">Bad Drivers of America</div>
+        <div style="background:#1e293b;border-radius:12px;padding:12px;margin-bottom:8px;height:100px"></div>
+        <div style="background:#1e293b;border-radius:12px;padding:12px;height:100px"></div>
+      </div>
+    </div>
+    <div class="menu android-dark" style="background:#2d2d2d">
+      <div class="menu-item"><span style="font-size:18px">⭐</span> Add to favorites</div>
+      <div class="menu-item highlight"><span style="font-size:18px">📱</span> <strong>Add to Home screen</strong></div>
+      <div class="menu-item"><span style="font-size:18px">⬇️</span> Download</div>
+      <div class="menu-item"><span style="font-size:18px">🔄</span> Refresh</div>
+      <div class="menu-item"><span style="font-size:18px">🔍</span> Find in page</div>
+      <div class="menu-item"><span style="font-size:18px">🔐</span> Settings</div>
+    </div>
+  </div>
+  <div class="caption"><span class="caption-num">2</span>Tap menu → Add to Home screen</div>
+</div>
+
+<!-- ====== ANDROID STEP 3: Add to Home screen dialog ====== -->
+<div class="phone">
+  <div class="screen android-dark">
+    <div class="status-bar android-dark">
+      <span>9:41</span>
+      <span>📶 🔋</span>
+    </div>
+    <div style="padding:16px;opacity:0.15">
+      <div style="background:#0f172a;border-radius:16px;padding:20px;text-align:center">
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:16px">Bad Drivers of America</div>
+        <div style="background:#1e293b;border-radius:12px;padding:12px;margin-bottom:8px;height:100px"></div>
+      </div>
+    </div>
+    <div style="position:absolute;bottom:0;left:0;right:0;background:#2d2d2d;border-radius:20px 20px 0 0;padding:24px">
+      <div style="font-size:16px;font-weight:600;color:#fff;margin-bottom:20px;text-align:center">Add to Home screen</div>
+      <div style="display:flex;gap:16px;align-items:center;margin-bottom:24px">
+        <div style="width:52px;height:52px;border-radius:14px;background:#dc2626;display:flex;align-items:center;justify-content:center;font-size:26px">🚗</div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:600;color:#fff">Bad Drivers of America</div>
+          <div style="font-size:12px;color:#8e8e93">bad-drivers-of-america.pplx.app</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1;text-align:center;padding:14px;background:#3c4043;border-radius:12px;font-size:15px;font-weight:500;color:#fff">Cancel</div>
+        <div style="flex:1;text-align:center;padding:14px;background:#4285f4;border-radius:12px;font-size:15px;font-weight:500;color:#fff">Add</div>
+      </div>
+    </div>
+  </div>
+  <div class="caption"><span class="caption-num">3</span>Tap "Add" to confirm</div>
+</div>
+
+<!-- ====== ANDROID STEP 4: Home Screen with App Icon ====== -->
+<div class="phone">
+  <div class="screen android-light">
+    <div class="status-bar android-light">
+      <span>9:41</span>
+      <span>📶 🔋</span>
+    </div>
+    <div style="padding:8px 16px;font-size:22px;font-weight:500;color:#000">Google</div>
+    <div class="home-screen">
+      <div class="home-icon"><div class="home-icon-img accent-blue">📧</div><div class="home-icon-label">Gmail</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-green">🟢</div><div class="home-icon-label">Phone</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-blue">💬</div><div class="home-icon-label">Messages</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-orange">📷</div><div class="home-icon-label">Camera</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-red">⏰</div><div class="home-icon-label">Clock</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-yellow">🗺️</div><div class="home-icon-label">Maps</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-purple">🎵</div><div class="home-icon-label">Music</div></div>
+      <div class="home-icon"><div class="home-icon-img gray-1">⚙️</div><div class="home-icon-label">Settings</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-blue">🌐</div><div class="home-icon-label">Chrome</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-green">🟢</div><div class="home-icon-label">Drive</div></div>
+      <div class="home-icon"><div class="home-icon-img accent-indigo">📱</div><div class="home-icon-label">Contacts</div></div>
+      <div class="home-icon"><div class="home-icon-img app-brand highlight-ring">🚗</div><div class="home-icon-label" style="font-weight:700">Bad Drivers</div></div>
+    </div>
+  </div>
+  <div class="caption"><span class="caption-num">4</span>App icon on home screen</div>
+</div>
+
+</body>
+</html>

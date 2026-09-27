@@ -164,9 +164,55 @@ npx cap open android   # Rebuild native
 npx cap open ios       # Rebuild native
 ```
 
+## PWA Installation Guide (Add to Home Screen)
+
+The app is a PWA — users can install it on their phone without going through any app store. The app loads from the live site URL and uses browser APIs for location and notifications.
+
+### iPhone (iOS)
+
+You must use **Safari** — "Add to Home Screen" is not available in Chrome, Firefox, or in-app browsers.
+
+![iOS Installation Steps](builds/ios-install-steps.png)
+
+1. Open **Safari** and go to **https://bad-drivers-of-america.pplx.app**
+2. Wait for the page to fully load, then tap the **Share button** (square icon with arrow pointing up, at the bottom of the screen)
+3. Scroll through the Share Sheet and tap **Add to Home Screen**
+4. Tap **Add** in the top right corner
+
+The app icon appears on the home screen. Tapping it opens the app full-screen with no address bar.
+
+> **Troubleshooting:** If you don't see "Add to Home Screen," you may be in an in-app browser. Copy the URL, open Safari separately, paste it, and try again. Swipe left on the actions row if the option is off-screen.
+
+### Android
+
+Works in **Chrome** or **Edge**.
+
+![Android Installation Steps](builds/android-install-steps.png)
+
+**Using Chrome:**
+1. Open **Chrome** and go to **https://bad-drivers-of-america.pplx.app**
+2. Tap the **three-dot menu** in the top right corner
+3. Tap **Add to Home screen** (or **Install app** if the prompt appears)
+4. Tap **Add** to confirm
+
+**Using Edge:**
+1. Open **Edge** and go to **https://bad-drivers-of-america.pplx.app**
+2. Tap the **three-dot menu** in the bottom right corner
+3. Tap **Add to phone** > **Add to Home screen**
+4. Tap **Add** to confirm
+
+> **Tip:** On newer Android versions, Chrome may show an "Install app" prompt automatically when you visit the site.
+
+### Alternative: Install via APK (Android only)
+
+If you prefer not to use a browser, you can install the debug APK directly:
+1. Download `bad-drivers-debug.apk` from the `builds/` folder
+2. Transfer it to your Android phone
+3. Open the file (you may need to enable "Install from unknown sources" in Settings)
+4. Tap **Install**
+
+---
+
 ## PWA (Progressive Web App)
 
-The app is also a PWA — users can visit the site on their phone and tap
-"Add to Home Screen" for an app-like experience without going through
-any app store. This works on both Android and iOS. Location and notification
-permissions use browser APIs in PWA mode.
+The app is also a PWA with a service worker, web manifest, and offline support. See the **PWA Installation Guide** section above for detailed home screen installation instructions for both iPhone and Android.
