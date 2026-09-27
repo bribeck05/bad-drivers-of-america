@@ -172,6 +172,18 @@ export default function AuthPage() {
         </div>
       </Card>
 
+      {/* Continue as Guest */}
+      <div className="text-center">
+        <button
+          type="button"
+          onClick={() => setLocation("/")}
+          data-testid="button-continue-guest"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
+        >
+          Continue as Guest
+        </button>
+      </div>
+
       <p className="text-xs text-center text-muted-foreground leading-relaxed px-4">
         <Car className="w-3 h-3 inline mr-1" />
         Your account lets you submit reports, vote, and comment. Rate limits protect against spam and abuse.

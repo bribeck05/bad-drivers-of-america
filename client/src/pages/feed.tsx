@@ -481,6 +481,7 @@ function FeedCard({ report, index }: { report: Report; index: number }) {
 }
 
 export default function Feed() {
+  const { isAuthenticated } = useAuth();
   const { data: reports, isLoading } = useQuery<Report[]>({
     queryKey: ["/api/reports"],
   });
@@ -532,6 +533,19 @@ export default function Feed() {
         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Live Feed</span>
         <span className="text-xs text-muted-foreground ml-auto">{reports.length} reports</span>
       </div>
+
+      {/* Guest mode banner */}
+      {!isAuthenticated && (
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+          <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+            Browsing as Guest
+          </span>
+          <Link href="/auth" className="text-xs font-semibold text-primary hover:underline ml-auto">
+            Sign in to interact
+          </Link>
+        </div>
+      )}
 
       {reports.map((report, index) => (
         <FeedCard key={report.id} report={report} index={index} />
