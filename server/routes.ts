@@ -162,6 +162,24 @@ export async function registerRoutes(
 
   // ===== REPORT ROUTES =====
 
+  // Get nearby reports (for location-based notifications)
+  app.get("/api/reports/nearby", rateLimit(60000, 30), async (req, res) => {
+    try {
+      const lat = parseFloat(req.query.lat as string);
+      const lng = parseFloat(req.query.lng as string);
+      const radius = parseFloat(req.query.radius as string) || 25; // default 25 miles
+
+      if (isNaN(lat) || isNaN(lng)) {
+        return res.status(400).json({ error: "Valid lat and lng query parameters are required" });
+      }
+
+      const nearby = await storage.getNearbyReports(lat, lng, radius);
+      res.json(nearby);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Get all reports (feed)
   app.get("/api/reports", rateLimit(60000, 60), async (_req, res) => {
     try {

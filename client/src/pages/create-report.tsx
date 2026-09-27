@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Camera, Video, X, MapPin, Car, Upload, ShieldCheck } from "lucide-react";
+import { Camera, Video, X, MapPin, Car, Upload, ShieldCheck, Navigation } from "lucide-react";
 import type { InsertReport } from "@shared/schema";
 
 const INCIDENT_TYPES = [
@@ -38,6 +38,8 @@ export default function CreateReport() {
   const [incidentType, setIncidentType] = useState("reckless");
   const [mediaData, setMediaData] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<"photo" | "video">("photo");
+  const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [gpsLoading, setGpsLoading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -47,6 +49,26 @@ export default function CreateReport() {
   const { user } = useAuth();
 
   const authorName = user?.displayName || "Anonymous Driver";
+
+  const captureGps = useCallback(() => {
+    if (!("geolocation" in navigator)) {
+      toast({ title: "Not supported", description: "GPS is not available on this device.", variant: "destructive" });
+      return;
+    }
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGpsCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setGpsLoading(false);
+        toast({ title: "Location captured", description: "This report will be tagged with your GPS coordinates." });
+      },
+      () => {
+        setGpsLoading(false);
+        toast({ title: "Location denied", description: "Allow location access to tag this report.", variant: "destructive" });
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, [toast]);
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertReport) => {
@@ -95,6 +117,8 @@ export default function CreateReport() {
       mediaData: mediaData || undefined,
       incidentType,
       authorName: authorName,
+      latitude: gpsCoords?.lat,
+      longitude: gpsCoords?.lng,
     });
   };
 
@@ -267,14 +291,32 @@ export default function CreateReport() {
             Location
           </span>
         </Label>
-        <Input
-          id="location"
-          data-testid="input-location"
-          placeholder="e.g., I-40 East, Raleigh"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          maxLength={100}
-        />
+        <div className="flex gap-2">
+          <Input
+            id="location"
+            data-testid="input-location"
+            placeholder="e.g., I-40 East, Raleigh"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            maxLength={100}
+          />
+          <Button
+            type="button"
+            variant={gpsCoords ? "default" : "outline"}
+            size="icon"
+            onClick={captureGps}
+            disabled={gpsLoading}
+            data-testid="button-capture-gps"
+            className="shrink-0"
+          >
+            <Navigation className="w-4 h-4" />
+          </Button>
+        </div>
+        {gpsCoords && (
+          <p className="text-xs text-green-600 mt-1">
+            GPS pinned: {gpsCoords.lat.toFixed(4)}, {gpsCoords.lng.toFixed(4)}
+          </p>
+        )}
       </div>
 
       {/* State */}

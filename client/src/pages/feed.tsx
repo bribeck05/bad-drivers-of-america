@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -9,9 +9,151 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, ThumbsUp, ThumbsDown, MessageCircle, Eye, Clock, Car, Send, Lock, ChevronDown, ChevronUp } from "lucide-react";
+import { MapPin, ThumbsUp, ThumbsDown, MessageCircle, Eye, Clock, Car, Send, Lock, ChevronDown, ChevronUp, Bell, BellOff, Navigation } from "lucide-react";
 import type { Report, Comment } from "@shared/schema";
 import { INCIDENT_LABELS, INCIDENT_COLORS, formatTimeAgo } from "@/lib/utils";
+
+function NearbyAlerts() {
+  const { toast } = useToast();
+  const [alertsOn, setAlertsOn] = useState(false);
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState(false);
+  const [nearbyCount, setNearbyCount] = useState(0);
+  const lastSeenIds = useRef<Set<number>>(new Set());
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startAlerts = useCallback(() => {
+    if (!("geolocation" in navigator)) {
+      toast({ title: "Not supported", description: "Location alerts need GPS access.", variant: "destructive" });
+      return;
+    }
+
+    // Request notification permission
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setLocation(coords);
+        setLocationError(false);
+        setAlertsOn(true);
+
+        // Initial check — seed the known IDs so we don't notify about old reports
+        apiRequest("GET", `/api/reports/nearby?lat=${coords.lat}&lng=${coords.lng}&radius=25`)
+          .then((res) => res.json())
+          .then((nearby: Report[]) => {
+            lastSeenIds.current = new Set(nearby.map((r) => r.id));
+            setNearbyCount(nearby.length);
+          })
+          .catch(() => {});
+      },
+      () => {
+        setLocationError(true);
+        toast({ title: "Location denied", description: "Allow location access to get nearby alerts.", variant: "destructive" });
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, [toast]);
+
+  const stopAlerts = useCallback(() => {
+    setAlertsOn(false);
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    setLocation(null);
+    setNearbyCount(0);
+    lastSeenIds.current.clear();
+  }, []);
+
+  // Poll for new nearby reports every 60 seconds
+  useEffect(() => {
+    if (!alertsOn || !location) return;
+
+    const check = async () => {
+      try {
+        const res = await apiRequest(
+          "GET",
+          `/api/reports/nearby?lat=${location.lat}&lng=${location.lng}&radius=25`
+        );
+        const nearby: Report[] = await res.json();
+        setNearbyCount(nearby.length);
+
+        // Find new reports we haven't seen before
+        const newReports = nearby.filter((r) => !lastSeenIds.current.has(r.id));
+        if (newReports.length > 0) {
+          // Update seen set
+          newReports.forEach((r) => lastSeenIds.current.add(r.id));
+
+          // Send notification
+          if ("Notification" in window && Notification.permission === "granted") {
+            if (newReports.length === 1) {
+              const r = newReports[0];
+              new Notification("Bad Driver nearby!", {
+                body: `${r.title} — ${r.location}${r.state ? ", " + r.state : ""}`,
+                icon: "/icon-192.png",
+                tag: `report-${r.id}`,
+              });
+            } else {
+              new Notification("Bad Drivers nearby!", {
+                body: `${newReports.length} new reports within 25 miles of you.`,
+                icon: "/icon-192.png",
+              });
+            }
+          }
+
+          toast({
+            title: `${newReports.length} new report${newReports.length > 1 ? "s" : ""} nearby!`,
+            description: newReports.length === 1
+              ? `${newReports[0].title} — ${newReports[0].location}`
+              : `${newReports.length} reports within 25 miles of you.`,
+          });
+        }
+      } catch {
+        // silently skip on error
+      }
+    };
+
+    // Poll every 60 seconds
+    pollRef.current = setInterval(check, 60000);
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, [alertsOn, location, toast]);
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-border bg-card/50">
+      <button
+        onClick={alertsOn ? stopAlerts : startAlerts}
+        data-testid="button-toggle-nearby-alerts"
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+          alertsOn
+            ? "bg-red-500/15 text-red-600"
+            : "bg-accent text-foreground hover:bg-accent/80"
+        }`}
+      >
+        {alertsOn ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+        {alertsOn ? "Alerts On" : "Nearby Alerts"}
+      </button>
+
+      {alertsOn && location && (
+        <span className="text-xs text-muted-foreground flex items-center gap-1">
+          <Navigation className="w-3 h-3" />
+          {nearbyCount} nearby
+        </span>
+      )}
+
+      {locationError && (
+        <span className="text-xs text-red-500">Location access denied</span>
+      )}
+    </div>
+  );
+}
 
 function FeedCard({ report, index }: { report: Report; index: number }) {
   const { toast } = useToast();
@@ -314,6 +456,7 @@ export default function Feed() {
 
   return (
     <div className="p-4 space-y-4">
+      <NearbyAlerts />
       <div className="flex items-center gap-2 mb-1">
         <div className="w-2 h-2 rounded-full bg-red-500 live-dot" />
         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Live Feed</span>

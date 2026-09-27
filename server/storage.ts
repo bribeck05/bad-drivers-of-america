@@ -54,6 +54,10 @@ sqlite.exec(`
   );
 `);
 
+// Add lat/long columns to existing reports table (migration)
+try { sqlite.exec(`ALTER TABLE reports ADD COLUMN latitude REAL;`); } catch {}
+try { sqlite.exec(`ALTER TABLE reports ADD COLUMN longitude REAL;`); } catch {}
+
 export interface IStorage {
   // Users
   createUser(user: InsertUser & { passwordHash: string }): Promise<User>;
@@ -63,6 +67,7 @@ export interface IStorage {
   getAllReports(): Promise<Report[]>;
   getReport(id: number): Promise<Report | undefined>;
   getReportsByPlate(plate: string): Promise<Report[]>;
+  getNearbyReports(lat: number, lng: number, radiusMiles: number): Promise<Report[]>;
   createReport(report: InsertReport & { userId?: number }): Promise<Report>;
   upvoteReport(id: number): Promise<Report | undefined>;
   downvoteReport(id: number): Promise<Report | undefined>;
@@ -106,6 +111,23 @@ export class DatabaseStorage implements IStorage {
 
   async getReportsByPlate(plate: string): Promise<Report[]> {
     return db.select().from(reports).where(eq(reports.licensePlate, plate.toUpperCase())).orderBy(desc(reports.createdAt)).all();
+  }
+
+  async getNearbyReports(lat: number, lng: number, radiusMiles: number): Promise<Report[]> {
+    const allReports = db.select().from(reports).orderBy(desc(reports.createdAt)).all();
+    // Haversine distance filter
+    return allReports.filter(r => {
+      if (r.latitude == null || r.longitude == null) return false;
+      const R = 3958.8; // Earth radius in miles
+      const dLat = (r.latitude - lat) * Math.PI / 180;
+      const dLng = (r.longitude - lng) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat * Math.PI / 180) * Math.cos(r.latitude * Math.PI / 180) *
+        Math.sin(dLng / 2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const dist = R * c;
+      return dist <= radiusMiles;
+    });
   }
 
   async createReport(report: InsertReport & { userId?: number }): Promise<Report> {

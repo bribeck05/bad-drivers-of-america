@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import type * as z from "zod/mini";
 
@@ -26,6 +26,8 @@ export const reports = sqliteTable("reports", {
   incidentType: text("incident_type").notNull().default("reckless"), // reckless, speeding, parking, texting, road-rage, other
   authorName: text("author_name").notNull().default("Anonymous Driver"),
   userId: integer("user_id"), // nullable foreign key to users
+  latitude: real("latitude"), // optional GPS coordinates
+  longitude: real("longitude"), // optional GPS coordinates
   upvotes: integer("upvotes").notNull().default(0),
   downvotes: integer("downvotes").notNull().default(0),
   views: integer("views").notNull().default(0),
