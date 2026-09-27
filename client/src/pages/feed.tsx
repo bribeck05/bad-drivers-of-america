@@ -16,13 +16,18 @@ import { INCIDENT_LABELS, INCIDENT_COLORS, formatTimeAgo } from "@/lib/utils";
 function NearbyAlerts() {
   const { toast } = useToast();
   const [alertsOn, setAlertsOn] = useState(false);
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [location, setGpsLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState(false);
   const [nearbyCount, setNearbyCount] = useState(0);
+  const [radius, setRadius] = useState(25); // miles
+  const [showRadiusPicker, setShowRadiusPicker] = useState(false);
   const lastSeenIds = useRef<Set<number>>(new Set());
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const startAlerts = useCallback(() => {
+  const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
+
+  const startAlerts = useCallback((useRadius?: number) => {
+    const r = useRadius ?? radius;
     if (!("geolocation" in navigator)) {
       toast({ title: "Not supported", description: "Location alerts need GPS access.", variant: "destructive" });
       return;
@@ -36,15 +41,15 @@ function NearbyAlerts() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setLocation(coords);
+        setGpsLocation(coords);
         setLocationError(false);
         setAlertsOn(true);
 
         // Initial check — seed the known IDs so we don't notify about old reports
-        apiRequest("GET", `/api/reports/nearby?lat=${coords.lat}&lng=${coords.lng}&radius=25`)
+        apiRequest("GET", `/api/reports/nearby?lat=${coords.lat}&lng=${coords.lng}&radius=${r}`)
           .then((res) => res.json())
           .then((nearby: Report[]) => {
-            lastSeenIds.current = new Set(nearby.map((r) => r.id));
+            lastSeenIds.current = new Set(nearby.map((rep) => rep.id));
             setNearbyCount(nearby.length);
           })
           .catch(() => {});
@@ -55,7 +60,7 @@ function NearbyAlerts() {
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
-  }, [toast]);
+  }, [toast, radius]);
 
   const stopAlerts = useCallback(() => {
     setAlertsOn(false);
@@ -63,10 +68,27 @@ function NearbyAlerts() {
       clearInterval(pollRef.current);
       pollRef.current = null;
     }
-    setLocation(null);
+    setGpsLocation(null);
     setNearbyCount(0);
     lastSeenIds.current.clear();
   }, []);
+
+  // When radius changes while alerts are on, re-seed and restart polling
+  const handleRadiusChange = useCallback((newRadius: number) => {
+    setRadius(newRadius);
+    setShowRadiusPicker(false);
+    if (alertsOn && location) {
+      // Clear seen IDs and re-seed with new radius
+      lastSeenIds.current.clear();
+      apiRequest("GET", `/api/reports/nearby?lat=${location.lat}&lng=${location.lng}&radius=${newRadius}`)
+        .then((res) => res.json())
+        .then((nearby: Report[]) => {
+          lastSeenIds.current = new Set(nearby.map((r) => r.id));
+          setNearbyCount(nearby.length);
+        })
+        .catch(() => {});
+    }
+  }, [alertsOn, location]);
 
   // Poll for new nearby reports every 60 seconds
   useEffect(() => {
@@ -76,7 +98,7 @@ function NearbyAlerts() {
       try {
         const res = await apiRequest(
           "GET",
-          `/api/reports/nearby?lat=${location.lat}&lng=${location.lng}&radius=25`
+          `/api/reports/nearby?lat=${location.lat}&lng=${location.lng}&radius=${radius}`
         );
         const nearby: Report[] = await res.json();
         setNearbyCount(nearby.length);
@@ -98,7 +120,7 @@ function NearbyAlerts() {
               });
             } else {
               new Notification("Bad Drivers nearby!", {
-                body: `${newReports.length} new reports within 25 miles of you.`,
+                body: `${newReports.length} new reports within ${radius} miles of you.`,
                 icon: "/icon-192.png",
               });
             }
@@ -108,7 +130,7 @@ function NearbyAlerts() {
             title: `${newReports.length} new report${newReports.length > 1 ? "s" : ""} nearby!`,
             description: newReports.length === 1
               ? `${newReports[0].title} — ${newReports[0].location}`
-              : `${newReports.length} reports within 25 miles of you.`,
+              : `${newReports.length} reports within ${radius} miles of you.`,
           });
         }
       } catch {
@@ -124,32 +146,74 @@ function NearbyAlerts() {
         pollRef.current = null;
       }
     };
-  }, [alertsOn, location, toast]);
+  }, [alertsOn, location, radius, toast]);
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-border bg-card/50">
-      <button
-        onClick={alertsOn ? stopAlerts : startAlerts}
-        data-testid="button-toggle-nearby-alerts"
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-          alertsOn
-            ? "bg-red-500/15 text-red-600"
-            : "bg-accent text-foreground hover:bg-accent/80"
-        }`}
-      >
-        {alertsOn ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-        {alertsOn ? "Alerts On" : "Nearby Alerts"}
-      </button>
+    <div className="px-3 py-2.5 rounded-xl border border-border bg-card/50">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={alertsOn ? stopAlerts : () => startAlerts()}
+          data-testid="button-toggle-nearby-alerts"
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+            alertsOn
+              ? "bg-red-500/15 text-red-600"
+              : "bg-accent text-foreground hover:bg-accent/80"
+          }`}
+        >
+          {alertsOn ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+          {alertsOn ? "Alerts On" : "Nearby Alerts"}
+        </button>
 
-      {alertsOn && location && (
-        <span className="text-xs text-muted-foreground flex items-center gap-1">
-          <Navigation className="w-3 h-3" />
-          {nearbyCount} nearby
-        </span>
-      )}
+        {/* Radius selector button */}
+        <button
+          onClick={() => setShowRadiusPicker(!showRadiusPicker)}
+          data-testid="button-radius-picker"
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            showRadiusPicker
+              ? "bg-accent text-foreground"
+              : "bg-muted/50 text-muted-foreground hover:bg-accent"
+          }`}
+        >
+          <Navigation className="w-3.5 h-3.5" />
+          {radius} mi
+          {showRadiusPicker ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        </button>
 
-      {locationError && (
-        <span className="text-xs text-red-500">Location access denied</span>
+        {alertsOn && (
+          <span className="text-xs text-muted-foreground flex items-center gap-1 ml-auto">
+            {nearbyCount} nearby
+          </span>
+        )}
+
+        {locationError && (
+          <span className="text-xs text-red-500 ml-auto">Location denied</span>
+        )}
+      </div>
+
+      {/* Radius options dropdown */}
+      {showRadiusPicker && (
+        <div className="mt-2 pt-2 border-t border-border/50">
+          <div className="text-xs text-muted-foreground mb-2">Alert radius</div>
+          <div className="flex flex-wrap gap-2">
+            {RADIUS_OPTIONS.map((r) => (
+              <button
+                key={r}
+                onClick={() => handleRadiusChange(r)}
+                data-testid={`button-radius-${r}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  radius === r
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-foreground hover:bg-accent"
+                }`}
+              >
+                {r} mi
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            Reports within this distance from you will trigger a notification.
+          </p>
+        </div>
       )}
     </div>
   );
