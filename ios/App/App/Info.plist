@@ -45,5 +45,11 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Bad Drivers of America uses your location to alert you when bad drivers are reported nearby.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Bad Drivers of America can alert you about nearby bad driver reports even when the app is in the background.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Your data is used to provide nearby driver alerts.</string>
 </dict>
 </plist>

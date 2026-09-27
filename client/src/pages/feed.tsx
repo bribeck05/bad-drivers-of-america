@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth-provider";
+import { persistentStorage } from "@/lib/persistent-storage";
+import { requestNotificationPermission, sendNotification, getCurrentPosition } from "@/lib/native-notifications";
 import { Link, useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,46 +22,55 @@ function NearbyAlerts() {
   const [locationError, setLocationError] = useState(false);
   const [nearbyCount, setNearbyCount] = useState(0);
   const [radius, setRadius] = useState(25); // miles
+  const [radiusLoaded, setRadiusLoaded] = useState(false);
   const [showRadiusPicker, setShowRadiusPicker] = useState(false);
   const lastSeenIds = useRef<Set<number>>(new Set());
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
+  const RADIUS_STORAGE_KEY = "bd_alert_radius";
 
-  const startAlerts = useCallback((useRadius?: number) => {
-    const r = useRadius ?? radius;
+  // Load saved radius on mount
+  useEffect(() => {
+    persistentStorage.getItem(RADIUS_STORAGE_KEY).then((saved) => {
+      if (saved) {
+        const parsed = parseInt(saved);
+        if (!isNaN(parsed) && RADIUS_OPTIONS.includes(parsed)) {
+          setRadius(parsed);
+        }
+      }
+      setRadiusLoaded(true);
+    });
+  }, []);
+
+  const startAlerts = useCallback(() => {
     if (!("geolocation" in navigator)) {
       toast({ title: "Not supported", description: "Location alerts need GPS access.", variant: "destructive" });
       return;
     }
 
     // Request notification permission
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
+    requestNotificationPermission();
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setGpsLocation(coords);
-        setLocationError(false);
-        setAlertsOn(true);
-
-        // Initial check — seed the known IDs so we don't notify about old reports
-        apiRequest("GET", `/api/reports/nearby?lat=${coords.lat}&lng=${coords.lng}&radius=${r}`)
-          .then((res) => res.json())
-          .then((nearby: Report[]) => {
-            lastSeenIds.current = new Set(nearby.map((rep) => rep.id));
-            setNearbyCount(nearby.length);
-          })
-          .catch(() => {});
-      },
-      () => {
+    getCurrentPosition().then((coords) => {
+      if (!coords) {
         setLocationError(true);
         toast({ title: "Location denied", description: "Allow location access to get nearby alerts.", variant: "destructive" });
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+        return;
+      }
+      setGpsLocation(coords);
+      setLocationError(false);
+      setAlertsOn(true);
+
+      // Initial check — seed the known IDs so we don't notify about old reports
+      apiRequest("GET", `/api/reports/nearby?lat=${coords.lat}&lng=${coords.lng}&radius=${radius}`)
+        .then((res) => res.json())
+        .then((nearby: Report[]) => {
+          lastSeenIds.current = new Set(nearby.map((rep) => rep.id));
+          setNearbyCount(nearby.length);
+        })
+        .catch(() => {});
+    });
   }, [toast, radius]);
 
   const stopAlerts = useCallback(() => {
@@ -73,10 +84,12 @@ function NearbyAlerts() {
     lastSeenIds.current.clear();
   }, []);
 
-  // When radius changes while alerts are on, re-seed and restart polling
+  // When radius changes, persist it and re-seed if alerts are on
   const handleRadiusChange = useCallback((newRadius: number) => {
     setRadius(newRadius);
     setShowRadiusPicker(false);
+    // Persist to storage
+    persistentStorage.setItem(RADIUS_STORAGE_KEY, String(newRadius));
     if (alertsOn && location) {
       // Clear seen IDs and re-seed with new radius
       lastSeenIds.current.clear();
@@ -92,7 +105,7 @@ function NearbyAlerts() {
 
   // Poll for new nearby reports every 60 seconds
   useEffect(() => {
-    if (!alertsOn || !location) return;
+    if (!alertsOn || !location || !radiusLoaded) return;
 
     const check = async () => {
       try {
@@ -109,22 +122,15 @@ function NearbyAlerts() {
           // Update seen set
           newReports.forEach((r) => lastSeenIds.current.add(r.id));
 
-          // Send notification
-          if ("Notification" in window && Notification.permission === "granted") {
-            if (newReports.length === 1) {
-              const r = newReports[0];
-              new Notification("Bad Driver nearby!", {
-                body: `${r.title} — ${r.location}${r.state ? ", " + r.state : ""}`,
-                icon: "/icon-192.png",
-                tag: `report-${r.id}`,
-              });
-            } else {
-              new Notification("Bad Drivers nearby!", {
-                body: `${newReports.length} new reports within ${radius} miles of you.`,
-                icon: "/icon-192.png",
-              });
-            }
-          }
+          const title = newReports.length === 1
+            ? "Bad Driver nearby!"
+            : "Bad Drivers nearby!";
+          const body = newReports.length === 1
+            ? `${newReports[0].title} — ${newReports[0].location}${newReports[0].state ? ", " + newReports[0].state : ""}`
+            : `${newReports.length} new reports within ${radius} miles of you.`;
+
+          // Send native-compatible notification
+          sendNotification(title, body, `report-${newReports[0].id}`);
 
           toast({
             title: `${newReports.length} new report${newReports.length > 1 ? "s" : ""} nearby!`,
@@ -146,7 +152,7 @@ function NearbyAlerts() {
         pollRef.current = null;
       }
     };
-  }, [alertsOn, location, radius, toast]);
+  }, [alertsOn, location, radius, radiusLoaded, toast]);
 
   return (
     <div className="px-3 py-2.5 rounded-xl border border-border bg-card/50">
@@ -211,7 +217,7 @@ function NearbyAlerts() {
             ))}
           </div>
           <p className="text-[11px] text-muted-foreground mt-2">
-            Reports within this distance from you will trigger a notification.
+            Reports within this distance from you will trigger a notification. Your choice is saved for next time.
           </p>
         </div>
       )}
