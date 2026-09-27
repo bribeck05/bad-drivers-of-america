@@ -32,17 +32,52 @@ Scan this QR code to open the app on your phone:
 
 Or visit: **https://bad-drivers-of-america.pplx.app**
 
-### Install on your phone
+### Install on iPhone (iOS)
 
-**iPhone (Safari):**
-1. Open the link in Safari
-2. Tap the Share button
-3. Tap "Add to Home Screen"
+You must use **Safari** — the "Add to Home Screen" feature is not available in other browsers like Chrome or Firefox.
 
-**Android (Chrome):**
-1. Open the link in Chrome
-2. Tap the three-dot menu
-3. Tap "Add to Home screen"
+1. Open **Safari** on your iPhone
+2. Go to **https://bad-drivers-of-america.pplx.app**
+3. Wait for the page to fully load
+4. Tap the **Share button** (square icon with an arrow pointing up, at the bottom of the screen)
+5. Scroll down the Share Sheet and tap **Add to Home Screen**
+6. Tap **Add** in the top right corner
+
+The app icon will appear on your home screen. Tapping it opens the app full-screen — no address bar, just like a native app.
+
+> **Tip:** If you don't see "Add to Home Screen," make sure you're in Safari (not an in-app browser). Swipe left on the actions row if the option is off-screen.
+
+### Install on Android
+
+You can use **Chrome** or **Edge** to install the app.
+
+**Using Chrome:**
+1. Open **Chrome** on your Android phone
+2. Go to **https://bad-drivers-of-america.pplx.app**
+3. Wait for the page to fully load
+4. Tap the **three-dot menu** in the top right corner
+5. Tap **Add to Home screen** (or **Install app** if the prompt appears)
+6. Tap **Add** to confirm
+
+**Using Edge:**
+1. Open **Edge** on your Android phone
+2. Go to **https://bad-drivers-of-america.pplx.app**
+3. Tap the **three-dot menu** in the bottom right corner
+4. Tap **Add to phone** > **Add to Home screen**
+5. Tap **Add** to confirm
+
+The app icon will appear on your home screen. Tapping it opens the app full-screen with no browser UI.
+
+> **Tip:** On newer Android versions, Chrome may show an "Install app" prompt automatically when you visit the site. Tap it to install.
+
+### Alternative: Install via APK (Android only)
+
+If you prefer not to use a browser, you can install the debug APK directly:
+
+1. Download the `bad-drivers-debug.apk` from the `builds/` folder
+2. Transfer it to your Android phone
+3. Open the file on your phone (you may need to enable "Install from unknown sources" in Settings)
+4. Tap **Install**
 
 ## Project Structure
 
