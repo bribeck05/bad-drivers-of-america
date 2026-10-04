@@ -46,9 +46,12 @@ export default function CreateReport() {
   const { toast } = useToast();
   const [, setLocation2] = useLocation();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const [guestAuthorName, setGuestAuthorName] = useState("");
 
-  const authorName = user?.displayName || "Anonymous Driver";
+  const authorName = isAuthenticated
+    ? (user?.displayName || "Anonymous Driver")
+    : (guestAuthorName.trim() || "Anonymous Driver");
 
   const captureGps = useCallback(() => {
     if (!("geolocation" in navigator)) {
@@ -128,6 +131,30 @@ export default function CreateReport() {
         <h1 className="font-display font-black text-xl">Report a Bad Driver</h1>
         <p className="text-sm text-muted-foreground mt-1">Help make our roads safer. Share what you witnessed.</p>
       </div>
+
+      {/* Guest author name */}
+      {!isAuthenticated && (
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-semibold text-amber-600 dark:text-amber-400">Browsing as Guest</div>
+            <div className="text-[11px] text-amber-600/60 dark:text-amber-400/60">Your report will be credited to the name below</div>
+          </div>
+        </div>
+      )}
+      {!isAuthenticated && (
+        <div>
+          <Label htmlFor="authorName" className="text-sm font-semibold mb-1.5 block">
+            Your Name (optional)
+          </Label>
+          <Input
+            id="authorName"
+            placeholder="e.g., Road Watcher"
+            value={guestAuthorName}
+            onChange={(e) => setGuestAuthorName(e.target.value)}
+            maxLength={50}
+          />
+        </div>
+      )}
 
       {/* Media Upload */}
       <div>

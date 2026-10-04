@@ -204,13 +204,14 @@ export async function registerRoutes(
     }
   });
 
-  // Create a new report (auth required)
-  app.post("/api/reports", requireAuth, rateLimit(60000, 10), async (req, res) => {
+  // Create a new report (open to all — auth optional)
+  app.post("/api/reports", rateLimit(60000, 10), async (req, res) => {
     try {
       const validated = insertReportSchema.parse(req.body);
+      const userId = getUserIdFromToken(req); // null if not logged in
       const report = await storage.createReport({
         ...validated,
-        userId: (req as any).userId,
+        userId: userId || undefined,
       });
       res.status(201).json(report);
     } catch (err: any) {

@@ -26,7 +26,7 @@ function AppRouter() {
   }
 
   // Routes that require authentication
-  const requiresAuth = location.startsWith("/create");
+  const requiresAuth = false; // Reporting is open to all users
 
   if (requiresAuth && !isAuthenticated) {
     return <AuthPage />;
