@@ -1,7 +1,7 @@
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from "@/components/auth-provider";
-import { useLocation } from "wouter";
-import { Moon, Sun, LogIn, LogOut } from "lucide-react";
+import { useLocation, Link } from "wouter";
+import { Moon, Sun, LogIn, LogOut, Scale } from "lucide-react";
 
 export function TopBar() {
   const { theme, toggleTheme } = useTheme();
@@ -42,6 +42,14 @@ export function TopBar() {
 
         {/* Actions */}
         <div className="flex items-center gap-1">
+          <Link
+            href="/terms"
+            data-testid="link-terms"
+            aria-label="Terms and Conditions"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all"
+          >
+            <Scale className="w-[18px] h-[18px]" />
+          </Link>
           <button
             onClick={handleAuthClick}
             data-testid="button-auth"

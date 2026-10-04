@@ -14,6 +14,7 @@ import CreateReport from "@/pages/create-report";
 import PlateLookup from "@/pages/plate-lookup";
 import Stats from "@/pages/stats";
 import AuthPage from "@/pages/auth-page";
+import Terms from "@/pages/terms";
 import NotFound from "@/pages/not-found";
 
 function AppRouter() {
@@ -40,6 +41,7 @@ function AppRouter() {
       <Route path="/plate" component={PlateLookup} />
       <Route path="/stats" component={Stats} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/terms" component={Terms} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -52,15 +54,15 @@ function App() {
         <AuthProvider>
           <TooltipProvider>
             <Toaster />
-            <div className="flex flex-col min-h-[100dvh] max-w-md mx-auto relative bg-background">
-              <TopBar />
-              <main className="flex-1 overflow-y-auto pb-28">
-                <Router hook={useHashLocation}>
+            <Router hook={useHashLocation}>
+              <div className="flex flex-col min-h-[100dvh] max-w-md mx-auto relative bg-background">
+                <TopBar />
+                <main className="flex-1 overflow-y-auto pb-28">
                   <AppRouter />
-                </Router>
-              </main>
-              <BottomNav />
-            </div>
+                </main>
+                <BottomNav />
+              </div>
+            </Router>
           </TooltipProvider>
         </AuthProvider>
       </ThemeProvider>

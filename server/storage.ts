@@ -36,6 +36,10 @@ sqlite.exec(`
     downvotes INTEGER NOT NULL DEFAULT 0,
     views INTEGER NOT NULL DEFAULT 0,
     comment_count INTEGER NOT NULL DEFAULT 0,
+    acknowledged_not_driving INTEGER NOT NULL DEFAULT 0,
+    acknowledged_no_personal_info INTEGER NOT NULL DEFAULT 0,
+    terms_version TEXT,
+    acknowledged_at TEXT,
     created_at TEXT NOT NULL
   );
   CREATE TABLE IF NOT EXISTS comments (
@@ -58,6 +62,13 @@ sqlite.exec(`
 try { sqlite.exec(`ALTER TABLE reports ADD COLUMN latitude REAL;`); } catch {}
 try { sqlite.exec(`ALTER TABLE reports ADD COLUMN longitude REAL;`); } catch {}
 
+// Add safety acknowledgment columns to existing reports table (migration).
+// Pre-existing rows default to 0/NULL, meaning "not acknowledged on record".
+try { sqlite.exec(`ALTER TABLE reports ADD COLUMN acknowledged_not_driving INTEGER NOT NULL DEFAULT 0;`); } catch {}
+try { sqlite.exec(`ALTER TABLE reports ADD COLUMN acknowledged_no_personal_info INTEGER NOT NULL DEFAULT 0;`); } catch {}
+try { sqlite.exec(`ALTER TABLE reports ADD COLUMN terms_version TEXT;`); } catch {}
+try { sqlite.exec(`ALTER TABLE reports ADD COLUMN acknowledged_at TEXT;`); } catch {}
+
 export interface IStorage {
   // Users
   createUser(user: InsertUser & { passwordHash: string }): Promise<User>;
@@ -68,7 +79,7 @@ export interface IStorage {
   getReport(id: number): Promise<Report | undefined>;
   getReportsByPlate(plate: string): Promise<Report[]>;
   getNearbyReports(lat: number, lng: number, radiusMiles: number): Promise<Report[]>;
-  createReport(report: InsertReport & { userId?: number }): Promise<Report>;
+  createReport(report: InsertReport & { userId?: number; termsVersion?: string; acknowledgedAt?: string }): Promise<Report>;
   upvoteReport(id: number): Promise<Report | undefined>;
   downvoteReport(id: number): Promise<Report | undefined>;
   incrementViews(id: number): Promise<void>;
@@ -130,7 +141,7 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async createReport(report: InsertReport & { userId?: number }): Promise<Report> {
+  async createReport(report: InsertReport & { userId?: number; termsVersion?: string; acknowledgedAt?: string }): Promise<Report> {
     const data = { ...report, licensePlate: report.licensePlate.toUpperCase() };
     return db.insert(reports).values(data).returning().get();
   }

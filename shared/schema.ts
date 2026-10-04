@@ -2,6 +2,10 @@ import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import type * as z from "zod/mini";
 
+// Current version of the Terms & Conditions. Bump this whenever the terms
+// change so stored acknowledgments remain auditable against what was shown.
+export const TERMS_VERSION = "2026-10-04";
+
 // Users table — authentication
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -32,6 +36,15 @@ export const reports = sqliteTable("reports", {
   downvotes: integer("downvotes").notNull().default(0),
   views: integer("views").notNull().default(0),
   commentCount: integer("comment_count").notNull().default(0),
+  // Safety acknowledgments — recorded at submission time (see TERMS_VERSION)
+  acknowledgedNotDriving: integer("acknowledged_not_driving", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  acknowledgedNoPersonalInfo: integer("acknowledged_no_personal_info", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  termsVersion: text("terms_version"),
+  acknowledgedAt: text("acknowledged_at"),
   createdAt: text("created_at").notNull().default(new Date().toISOString()),
 });
 
@@ -67,6 +80,9 @@ export const insertReportSchema = createInsertSchema(reports).omit({
   commentCount: true,
   createdAt: true,
   userId: true,
+  // Server-stamped at submission time, never client-supplied
+  termsVersion: true,
+  acknowledgedAt: true,
 });
 
 export const insertCommentSchema = createInsertSchema(comments).omit({

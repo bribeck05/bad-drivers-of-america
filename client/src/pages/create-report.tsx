@@ -2,14 +2,15 @@ import { useState, useRef, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useAuth } from "@/components/auth-provider";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Camera, Video, X, MapPin, Car, Upload, ShieldCheck, Navigation } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Camera, Video, X, MapPin, Car, Upload, ShieldCheck, Navigation, CarFront } from "lucide-react";
 import type { InsertReport } from "@shared/schema";
 
 const INCIDENT_TYPES = [
@@ -40,6 +41,8 @@ export default function CreateReport() {
   const [mediaType, setMediaType] = useState<"photo" | "video">("photo");
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [notDriving, setNotDriving] = useState(false);
+  const [noPersonalInfo, setNoPersonalInfo] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -108,6 +111,15 @@ export default function CreateReport() {
       return;
     }
 
+    if (!notDriving || !noPersonalInfo) {
+      toast({
+        title: "Safety agreement required",
+        description: "Please confirm both safety acknowledgments before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     createMutation.mutate({
       title: title.trim(),
       description: description.trim() || undefined,
@@ -122,6 +134,8 @@ export default function CreateReport() {
       authorName: authorName,
       latitude: gpsCoords?.lat,
       longitude: gpsCoords?.lng,
+      acknowledgedNotDriving: notDriving,
+      acknowledgedNoPersonalInfo: noPersonalInfo,
     });
   };
 
@@ -130,6 +144,27 @@ export default function CreateReport() {
       <div className="mb-2">
         <h1 className="font-display font-black text-xl">Report a Bad Driver</h1>
         <p className="text-sm text-muted-foreground mt-1">Help make our roads safer. Share what you witnessed.</p>
+      </div>
+
+      {/* Safety warning */}
+      <div className="flex items-start gap-3 px-3.5 py-3 rounded-xl bg-red-500/10 border border-red-500/30">
+        <CarFront className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+        <div className="min-w-0 space-y-1">
+          <div className="text-xs font-black uppercase tracking-wide text-red-600 dark:text-red-400">
+            Do not use this app while driving
+          </div>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Passengers only — or drivers who are fully stopped and parked. Never
+            post names or addresses, and never follow a driver home.{" "}
+            <Link
+              href="/terms"
+              data-testid="link-terms-from-report"
+              className="font-semibold text-foreground underline underline-offset-2"
+            >
+              Read the full terms
+            </Link>
+          </p>
+        </div>
       </div>
 
       {/* Guest author name */}
@@ -369,11 +404,46 @@ export default function CreateReport() {
         <span className="text-muted-foreground">Posting as <span className="font-semibold text-foreground">{authorName}</span></span>
       </div>
 
+      {/* Safety acknowledgments */}
+      <div className="space-y-3 p-3.5 rounded-xl border border-border bg-card">
+        <div className="text-xs font-black uppercase tracking-wide text-muted-foreground">
+          Required Acknowledgments
+        </div>
+        <label className="flex items-start gap-3 cursor-pointer">
+          <Checkbox
+            checked={notDriving}
+            onCheckedChange={(v) => setNotDriving(v === true)}
+            data-testid="checkbox-not-driving"
+            className="mt-0.5 shrink-0"
+          />
+          <span className="text-xs leading-relaxed text-muted-foreground">
+            I am <span className="font-semibold text-foreground">not driving</span>.
+            I am a passenger, or my vehicle is fully stopped and parked in a safe,
+            legal location.
+          </span>
+        </label>
+        <label className="flex items-start gap-3 cursor-pointer">
+          <Checkbox
+            checked={noPersonalInfo}
+            onCheckedChange={(v) => setNoPersonalInfo(v === true)}
+            data-testid="checkbox-no-personal-info"
+            className="mt-0.5 shrink-0"
+          />
+          <span className="text-xs leading-relaxed text-muted-foreground">
+            This report contains{" "}
+            <span className="font-semibold text-foreground">
+              no names, addresses, or personal information
+            </span>
+            , and I did not follow or confront the driver.
+          </span>
+        </label>
+      </div>
+
       {/* Submit */}
       <Button
         type="submit"
         data-testid="button-submit-report"
-        disabled={createMutation.isPending}
+        disabled={createMutation.isPending || !notDriving || !noPersonalInfo}
         className="w-full h-12 text-base font-bold"
       >
         {createMutation.isPending ? (
@@ -387,7 +457,16 @@ export default function CreateReport() {
       </Button>
 
       <p className="text-xs text-center text-muted-foreground leading-relaxed">
-        By submitting, you confirm this report is truthful and based on your own observation. Do not submit false or defamatory reports.
+        By submitting, you confirm this report is truthful and based on your own
+        observation, and you agree to the{" "}
+        <Link
+          href="/terms"
+          data-testid="link-terms-footer"
+          className="font-semibold text-foreground underline underline-offset-2"
+        >
+          Terms &amp; Conditions
+        </Link>
+        . Do not submit false or defamatory reports.
       </p>
     </form>
   );

@@ -3,7 +3,7 @@ import type { Server } from "node:http";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { storage } from "./storage";
-import { insertReportSchema, insertCommentSchema, safeUser } from "@shared/schema";
+import { insertReportSchema, insertCommentSchema, safeUser, TERMS_VERSION } from "@shared/schema";
 import { z } from "zod";
 
 // --- Rate Limiter (in-memory, IP-based) ---
@@ -208,10 +208,30 @@ export async function registerRoutes(
   app.post("/api/reports", rateLimit(60000, 10), async (req, res) => {
     try {
       const validated = insertReportSchema.parse(req.body);
+
+      // Safety acknowledgments are mandatory and must be affirmatively true.
+      // These are a record of consent, so we reject rather than coerce.
+      if (validated.acknowledgedNotDriving !== true) {
+        return res.status(400).json({
+          error:
+            "You must confirm you are not driving. Reports may only be submitted by a passenger or from a safely parked vehicle.",
+        });
+      }
+      if (validated.acknowledgedNoPersonalInfo !== true) {
+        return res.status(400).json({
+          error:
+            "You must confirm this report contains no names, addresses, or personal information, and that you did not follow or confront the driver.",
+        });
+      }
+
       const userId = getUserIdFromToken(req); // null if not logged in
       const report = await storage.createReport({
         ...validated,
         userId: userId || undefined,
+        // Server-stamped so the acknowledgment is auditable against the
+        // exact terms version in force at submission time.
+        termsVersion: TERMS_VERSION,
+        acknowledgedAt: new Date().toISOString(),
       });
       res.status(201).json(report);
     } catch (err: any) {
