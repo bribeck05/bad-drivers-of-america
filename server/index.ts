@@ -96,7 +96,8 @@ app.use((req, res, next) => {
     {
       port,
       host: "0.0.0.0",
-      reusePort: true,
+      // reusePort is not supported on macOS/Windows
+      reusePort: process.platform === "linux",
     },
     () => {
       log(`serving on port ${port}`);
