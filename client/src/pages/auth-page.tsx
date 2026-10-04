@@ -58,10 +58,12 @@ export default function AuthPage() {
     <div className="p-4 space-y-4 min-h-[calc(100dvh-7rem)] flex flex-col justify-center">
       {/* Logo / Header */}
       <div className="text-center mb-2">
-        <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-3">
-          <Shield className="w-8 h-8 text-primary-foreground" />
+        <div className="relative w-18 h-18 mx-auto mb-4">
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary to-red-600 flex items-center justify-center shadow-lg">
+            <Shield className="w-9 h-9 text-white" strokeWidth={2} />
+          </div>
         </div>
-        <h1 className="font-display font-black text-xl">
+        <h1 className="font-display font-black text-xl tracking-tight">
           {mode === "signup" ? "Join the Community" : "Welcome Back"}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -71,7 +73,7 @@ export default function AuthPage() {
         </p>
       </div>
 
-      <Card className="p-5 space-y-4 border-card-border">
+      <Card className="p-5 space-y-4 border-card-border shadow-md">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Display Name (signup only) */}
           {mode === "signup" && (
@@ -146,7 +148,7 @@ export default function AuthPage() {
             type="submit"
             data-testid="button-submit-auth"
             disabled={isSubmitting}
-            className="w-full h-11 text-base font-bold"
+            className="w-full h-11 text-base font-bold bg-gradient-to-r from-primary to-red-600 hover:from-red-600 hover:to-primary transition-all shadow-md"
           >
             {isSubmitting
               ? "Please wait..."

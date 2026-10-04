@@ -310,7 +310,7 @@ function FeedCard({ report, index }: { report: Report; index: number }) {
   return (
     <Card
       data-testid={`card-report-${report.id}`}
-      className="overflow-hidden border-card-border animate-fade-in-up"
+      className="overflow-hidden border-card-border animate-fade-in-up card-hover shadow-sm"
       style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
     >
       {/* Media */}
@@ -337,11 +337,12 @@ function FeedCard({ report, index }: { report: Report; index: number }) {
           )}
         </div>
       ) : (
-        <div className="relative h-32 bg-gradient-to-br from-accent to-muted flex items-center justify-center">
-          <Badge className={`absolute top-2 left-2 ${INCIDENT_COLORS[report.incidentType as keyof typeof INCIDENT_COLORS] || "bg-gray-500 text-white"} border-0`}>
+        <div className="relative h-32 hazard-stripes flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-card/80 to-card/40" />
+          <Badge className={`absolute top-2 left-2 z-10 ${INCIDENT_COLORS[report.incidentType as keyof typeof INCIDENT_COLORS] || "bg-gray-500 text-white"} border-0 shadow-md`}>
             {INCIDENT_LABELS[report.incidentType as keyof typeof INCIDENT_LABELS] || "Other"}
           </Badge>
-          <span className="font-display font-bold text-2xl text-muted-foreground/40">
+          <span className="relative font-mono font-bold text-xl text-muted-foreground/30 tracking-wider">
             {report.licensePlate}
           </span>
         </div>
@@ -358,7 +359,7 @@ function FeedCard({ report, index }: { report: Report; index: number }) {
 
         {/* Vehicle info */}
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-muted font-mono font-bold tracking-wider">
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg plate-chip text-xs font-bold">
             {report.licensePlate}
           </div>
           {report.make && (
@@ -373,11 +374,11 @@ function FeedCard({ report, index }: { report: Report; index: number }) {
         </div>
 
         {/* Like / Dislike / Comment buttons */}
-        <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+        <div className="flex items-center gap-1 pt-2 border-t border-border/50">
           <button
             onClick={() => handleVote("up")}
             data-testid={`button-feed-upvote-${report.id}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-green-500/10 hover:text-green-600"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:bg-green-500/10 hover:text-green-600 active:scale-95"
           >
             <ThumbsUp className="w-4 h-4" />
             {report.upvotes}
@@ -385,7 +386,7 @@ function FeedCard({ report, index }: { report: Report; index: number }) {
           <button
             onClick={() => handleVote("down")}
             data-testid={`button-feed-downvote-${report.id}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-red-500/10 hover:text-red-600"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:bg-red-500/10 hover:text-red-600 active:scale-95"
           >
             <ThumbsDown className="w-4 h-4" />
             {report.downvotes}
@@ -393,7 +394,7 @@ function FeedCard({ report, index }: { report: Report; index: number }) {
           <button
             onClick={() => setShowComments(!showComments)}
             data-testid={`button-feed-comments-${report.id}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-accent"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:bg-accent active:scale-95"
           >
             <MessageCircle className="w-4 h-4" />
             {report.commentCount}
@@ -531,18 +532,21 @@ export default function Feed() {
       <div className="flex items-center gap-2 mb-1">
         <div className="w-2 h-2 rounded-full bg-red-500 live-dot" />
         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Live Feed</span>
-        <span className="text-xs text-muted-foreground ml-auto">{reports.length} reports</span>
+        <span className="text-xs text-muted-foreground ml-auto">{reports.length} {reports.length === 1 ? "report" : "reports"}</span>
       </div>
 
       {/* Guest mode banner */}
       {!isAuthenticated && (
-        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
-          <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-            Browsing as Guest
-          </span>
-          <Link href="/auth" className="text-xs font-semibold text-primary hover:underline ml-auto">
-            Sign in to interact
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+          <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-semibold text-amber-600 dark:text-amber-400">Browsing as Guest</div>
+            <div className="text-[11px] text-amber-600/60 dark:text-amber-400/60">Sign in to vote, report, and comment</div>
+          </div>
+          <Link href="/auth" className="text-xs font-bold text-primary hover:underline shrink-0 px-2.5 py-1.5 rounded-lg bg-primary/10 transition-colors">
+            Sign In
           </Link>
         </div>
       )}

@@ -13,7 +13,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50">
-      <div className="bg-card/95 backdrop-blur-lg border-t border-border px-2 py-2">
+      <div className="glass-nav border-t border-border/60 px-2 py-2">
         <div className="flex items-center justify-around">
           {tabs.map((tab) => {
             const isActive = location === tab.path || (tab.path !== "/" && location.startsWith(tab.path));
@@ -27,12 +27,12 @@ export function BottomNav() {
                   data-testid={tab.testId}
                   className="flex flex-col items-center gap-1"
                 >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-                    isActive ? "bg-primary text-primary-foreground shadow-lg" : "bg-primary text-primary-foreground shadow-md"
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all bg-gradient-to-br from-primary to-red-600 text-white ${
+                    isActive ? "shadow-lg nav-glow" : "shadow-md"
                   }`}>
                     <Icon className="w-5 h-5" strokeWidth={2.5} />
                   </div>
-                  <span className={`text-xs font-medium ${isActive ? "text-primary" : "text-muted-foreground"}`}>
+                  <span className={`text-xs font-semibold ${isActive ? "text-primary" : "text-muted-foreground"}`}>
                     {tab.label}
                   </span>
                 </Link>
@@ -51,7 +51,7 @@ export function BottomNav() {
                 }`}>
                   <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 2} />
                 </div>
-                <span className={`text-xs font-medium ${isActive ? "text-primary" : "text-muted-foreground"}`}>
+                <span className={`text-xs font-semibold ${isActive ? "text-primary" : "text-muted-foreground"}`}>
                   {tab.label}
                 </span>
               </Link>

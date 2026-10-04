@@ -1,7 +1,7 @@
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from "@/components/auth-provider";
 import { useLocation } from "wouter";
-import { Moon, Sun, LogIn, LogOut, User } from "lucide-react";
+import { Moon, Sun, LogIn, LogOut } from "lucide-react";
 
 export function TopBar() {
   const { theme, toggleTheme } = useTheme();
@@ -17,33 +17,40 @@ export function TopBar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-lg border-b border-border">
+    <header className="sticky top-0 z-40 glass-header border-b border-border/60">
       <div className="flex items-center justify-between px-4 h-14">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-primary-foreground" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {/* Logo + Brand */}
+        <div className="flex items-center gap-2.5">
+          <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-red-600 flex items-center justify-center shadow-md">
+            <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-white" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 17l2-5h14l2 5v3H3z" />
               <circle cx="7.5" cy="20" r="1.5" />
               <circle cx="16.5" cy="20" r="1.5" />
               <path d="M6 14l1-3M10 14v-3M14 14l-1-3" />
             </svg>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 border-2 border-card" />
           </div>
           <div className="flex flex-col leading-none">
-            <span className="font-display font-black text-base tracking-tight">Bad Drivers</span>
-            <span className="text-[10px] text-muted-foreground font-medium tracking-widest uppercase">of America</span>
+            <span className="font-display font-black text-base tracking-tight">
+              Bad Drivers
+            </span>
+            <span className="text-[9px] text-muted-foreground font-semibold tracking-[0.15em] uppercase">
+              of America
+            </span>
           </div>
         </div>
+
+        {/* Actions */}
         <div className="flex items-center gap-1">
-          {/* Auth button */}
           <button
             onClick={handleAuthClick}
             data-testid="button-auth"
             aria-label={isAuthenticated ? "Log out" : "Log in"}
-            className="flex items-center gap-1.5 px-2.5 h-9 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all"
           >
             {isAuthenticated ? (
               <>
-                <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center text-[10px] font-bold text-primary">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-red-600 flex items-center justify-center text-[10px] font-bold text-white">
                   {user?.displayName?.charAt(0).toUpperCase() || "U"}
                 </div>
                 <LogOut className="w-3.5 h-3.5" />
@@ -55,12 +62,11 @@ export function TopBar() {
               </>
             )}
           </button>
-          {/* Theme toggle */}
           <button
             onClick={toggleTheme}
             data-testid="button-theme-toggle"
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-            className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all"
           >
             {theme === "dark" ? (
               <Sun className="w-5 h-5" />
