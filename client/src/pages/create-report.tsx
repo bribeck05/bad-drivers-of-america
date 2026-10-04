@@ -13,6 +13,50 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Camera, Video, X, MapPin, Car, Upload, ShieldCheck, Navigation, CarFront } from "lucide-react";
 import type { InsertReport } from "@shared/schema";
 
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+// Longest edge of a stored photo. Phone cameras produce far larger images than
+// the feed can ever display, and every byte is base64'd into the database.
+const MAX_IMAGE_DIMENSION = 1600;
+const JPEG_QUALITY = 0.82;
+
+/**
+ * Downscale and re-encode a photo to keep payloads small. Falls back to the
+ * original data URL if the browser can't decode the file.
+ */
+function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read that file."));
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const img = new Image();
+      img.onerror = () => resolve(dataUrl); // not decodable — send as-is
+      img.onload = () => {
+        const scale = Math.min(
+          1,
+          MAX_IMAGE_DIMENSION / Math.max(img.width, img.height)
+        );
+        if (scale === 1 && dataUrl.length < 1_500_000) {
+          resolve(dataUrl);
+          return;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(dataUrl);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 const INCIDENT_TYPES = [
   { value: "reckless", label: "Reckless Driving", color: "bg-red-500" },
   { value: "speeding", label: "Speeding", color: "bg-orange-500" },
@@ -41,6 +85,7 @@ export default function CreateReport() {
   const [mediaType, setMediaType] = useState<"photo" | "video">("photo");
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [mediaProcessing, setMediaProcessing] = useState(false);
   const [notDriving, setNotDriving] = useState(false);
   const [noPersonalInfo, setNoPersonalInfo] = useState(false);
 
@@ -87,21 +132,54 @@ export default function CreateReport() {
       setLocation2("/");
     },
     onError: (err: Error) => {
-      toast({ title: "Failed to submit", description: err.message, variant: "destructive" });
+      const tooLarge =
+        err.message.includes("413") ||
+        err.message.toLowerCase().includes("entity too large");
+      toast({
+        title: tooLarge ? "Evidence file too large" : "Failed to submit",
+        description: tooLarge
+          ? "Your photo or video is too big to upload. Try a shorter video or a single photo."
+          : err.message,
+        variant: "destructive",
+      });
     },
   });
 
-  const handleFile = (file: File, type: "photo" | "video") => {
-    if (file.size > 8 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Please use a file under 8MB.", variant: "destructive" });
+  const handleFile = async (file: File, type: "photo" | "video") => {
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast({
+        title: "File too large",
+        description: `That file is ${(file.size / 1024 / 1024).toFixed(1)}MB. Please use one under 8MB.`,
+        variant: "destructive",
+      });
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setMediaData(e.target?.result as string);
-      setMediaType(type);
-    };
-    reader.readAsDataURL(file);
+
+    setMediaProcessing(true);
+    try {
+      if (type === "photo") {
+        const compressed = await compressImage(file);
+        setMediaData(compressed);
+        setMediaType("photo");
+      } else {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = () => reject(new Error("Could not read that file."));
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+        setMediaData(dataUrl);
+        setMediaType("video");
+      }
+    } catch (err: any) {
+      toast({
+        title: "Could not load file",
+        description: err?.message || "Please try a different file.",
+        variant: "destructive",
+      });
+    } finally {
+      setMediaProcessing(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -443,11 +521,13 @@ export default function CreateReport() {
       <Button
         type="submit"
         data-testid="button-submit-report"
-        disabled={createMutation.isPending || !notDriving || !noPersonalInfo}
+        disabled={createMutation.isPending || mediaProcessing || !notDriving || !noPersonalInfo}
         className="w-full h-12 text-base font-bold"
       >
         {createMutation.isPending ? (
           "Submitting..."
+        ) : mediaProcessing ? (
+          "Processing photo..."
         ) : (
           <span className="flex items-center gap-2 justify-center">
             <Upload className="w-4 h-4" />

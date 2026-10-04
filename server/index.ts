@@ -14,15 +14,19 @@ declare module "http" {
   }
 }
 
+// Reports embed photo/video evidence as base64 data URLs, which inflates the
+// raw bytes by roughly 4/3. The client caps uploads at 8MB, so allow headroom
+// above that or large evidence is rejected with a 413.
 app.use(
   express.json({
+    limit: "12mb",
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
   }),
 );
 
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: "12mb" }));
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
