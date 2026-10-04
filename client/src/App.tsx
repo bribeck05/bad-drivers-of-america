@@ -54,7 +54,7 @@ function App() {
             <Toaster />
             <div className="flex flex-col min-h-[100dvh] max-w-md mx-auto relative bg-background">
               <TopBar />
-              <main className="flex-1 overflow-y-auto pb-20">
+              <main className="flex-1 overflow-y-auto pb-28">
                 <Router hook={useHashLocation}>
                   <AppRouter />
                 </Router>

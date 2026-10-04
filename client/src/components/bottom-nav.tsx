@@ -12,7 +12,7 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 pb-safe">
       <div className="glass-nav border-t border-border/60 px-2 py-2">
         <div className="flex items-center justify-around">
           {tabs.map((tab) => {
@@ -25,9 +25,9 @@ export function BottomNav() {
                   key={tab.path}
                   href={tab.path}
                   data-testid={tab.testId}
-                  className="flex flex-col items-center gap-1"
+                  className="flex flex-col items-center gap-1 cursor-pointer"
                 >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all bg-gradient-to-br from-primary to-red-600 text-white ${
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all bg-gradient-to-br from-primary to-red-600 text-white ${
                     isActive ? "shadow-lg nav-glow" : "shadow-md"
                   }`}>
                     <Icon className="w-5 h-5" strokeWidth={2.5} />
@@ -44,7 +44,7 @@ export function BottomNav() {
                 key={tab.path}
                 href={tab.path}
                 data-testid={tab.testId}
-                className="flex flex-col items-center gap-1 transition-colors"
+                className="flex flex-col items-center gap-1 transition-colors cursor-pointer"
               >
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                   isActive ? "text-primary bg-primary/10" : "text-muted-foreground"
