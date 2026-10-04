@@ -1,10 +1,12 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { getAuthToken } from "@/components/auth-provider";
 
-// When deployed via publish_website, __PORT_5000__ is rewritten to the proxy path.
-// When not rewritten (starts with __), use /port/5000 prefix for published API routing.
+// When deployed via deploy_website, __PORT_5000__ is rewritten to the proxy path.
+// When running locally (sentinel not rewritten), use empty string for direct API access.
+// When on the published pplx.app site, use /port/5000 prefix for API routing.
 const PORT_SENTINEL = "__PORT_5000__";
-const API_BASE = PORT_SENTINEL.startsWith("__") ? "/port/5000" : PORT_SENTINEL;
+const isPublished = typeof window !== "undefined" && window.location.hostname.includes("pplx.app");
+const API_BASE = PORT_SENTINEL.startsWith("__") ? (isPublished ? "/port/5000" : "") : PORT_SENTINEL;
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
