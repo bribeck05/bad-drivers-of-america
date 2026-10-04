@@ -1,7 +1,10 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { getAuthToken } from "@/components/auth-provider";
 
-const API_BASE = "__PORT_5000__".startsWith("__") ? "" : "__PORT_5000__";
+// When deployed via publish_website, __PORT_5000__ is rewritten to the proxy path.
+// When not rewritten (starts with __), use /port/5000 prefix for published API routing.
+const PORT_SENTINEL = "__PORT_5000__";
+const API_BASE = PORT_SENTINEL.startsWith("__") ? "/port/5000" : PORT_SENTINEL;
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
