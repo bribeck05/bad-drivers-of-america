@@ -3,6 +3,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Shield, ThumbsUp, MessageCircle, FileText, TrendingUp, MapPin } from "lucide-react";
+import { FlagShieldCar, FlagStripes, StarDivider, RouteMarker, StarRow } from "@/components/americana";
+import { TrafficLight, RoadDivider, CarSide } from "@/components/clipart";
 
 interface Stats {
   totalReports: number;
@@ -43,19 +45,30 @@ export default function Stats() {
         <h1 className="font-display font-black text-xl">Community Stats</h1>
         <p className="text-sm text-muted-foreground mt-1">The state of bad driving in America.</p>
       </div>
-
       {/* Hero stat */}
-      <Card className="p-5 border-card-border bg-gradient-to-br from-card to-accent">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
-            <Shield className="w-6 h-6 text-primary-foreground" />
-          </div>
-          <div>
-            <div className="text-3xl font-display font-black">{stats?.totalReports || 0}</div>
-            <div className="text-xs text-muted-foreground font-medium">Bad Drivers Reported</div>
+      <div className="relative overflow-hidden rounded-2xl shadow-lg">
+        <div className="hero-asphalt">
+          <div className="star-field">
+            <div className="road-texture px-5 py-6 flex items-center gap-4">
+              <FlagShieldCar className="w-16 h-[72px] shrink-0 text-white/25 drop-shadow-lg" />
+              <div className="min-w-0 flex-1">
+                <StarRow count={3} className="text-red-400/80 mb-1.5" />
+                <div className="text-4xl font-display font-black text-white tabular-nums leading-none">
+                  {(stats?.totalReports || 0).toLocaleString()}
+                </div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-white/50 mt-1.5">
+                  Bad Drivers Reported
+                </div>
+                <div className="text-[11px] text-white/45 mt-1">
+                  Nationwide, and counting.
+                </div>
+              </div>
+              <TrafficLight className="w-9 h-9 shrink-0 opacity-80 drop-shadow" />
+            </div>
           </div>
         </div>
-      </Card>
+        <FlagStripes />
+      </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-3">
@@ -72,6 +85,8 @@ export default function Stats() {
       </div>
 
       {/* Top States */}
+      <StarDivider label="Across the Nation" className="pt-1" />
+
       <Card className="p-4 border-card-border">
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="w-4 h-4 text-muted-foreground" />
@@ -82,12 +97,16 @@ export default function Stats() {
           <div className="space-y-3">
             {stats.topStates.map((item, index) => (
               <div key={item.state} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-xs font-bold text-muted-foreground">
-                  {index + 1}
-                </div>
+                <RouteMarker
+                  label={item.state}
+                  className="w-8 h-9 shrink-0 text-primary"
+                />
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-medium flex items-center gap-1">
+                      <span className="text-[10px] font-black text-muted-foreground tabular-nums">
+                        #{index + 1}
+                      </span>
                       <MapPin className="w-3 h-3 text-muted-foreground" />
                       {item.state}
                     </span>
@@ -95,7 +114,7 @@ export default function Stats() {
                   </div>
                   <div className="h-2 rounded-full bg-muted overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-primary transition-all"
+                      className="h-full rounded-full bg-gradient-to-r from-primary to-red-500 transition-all"
                       style={{ width: `${(item.count / maxStateCount) * 100}%` }}
                     />
                   </div>
@@ -109,14 +128,21 @@ export default function Stats() {
       </Card>
 
       {/* About */}
-      <Card className="p-4 border-card-border">
-        <h2 className="font-display font-bold text-sm mb-2">About Bad Drivers of America</h2>
+      <Card className="relative p-4 border-card-border overflow-hidden">
+        <div className="flex items-center gap-2 mb-2">
+          <Shield className="w-4 h-4 text-primary" />
+          <h2 className="font-display font-bold text-sm">About Bad Drivers of America</h2>
+          <CarSide className="w-10 h-5 ml-auto text-primary/50" />
+        </div>
         <p className="text-xs text-muted-foreground leading-relaxed">
           Bad Drivers of America is a community-driven platform where citizens can report dangerous driving behavior. 
           Upload photos or videos, track license plates, and help make our roads safer for everyone. 
           Together, we can hold bad drivers accountable.
         </p>
+        <FlagStripes className="absolute bottom-0 left-0 right-0" />
       </Card>
+
+      <RoadDivider className="w-full h-3 rounded-full overflow-hidden opacity-60" />
     </div>
   );
 }

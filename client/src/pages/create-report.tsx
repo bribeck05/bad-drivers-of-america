@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Camera, Video, X, MapPin, Car, Upload, ShieldCheck, Navigation, CarFront } from "lucide-react";
+import { INCIDENT_ART } from "@/components/clipart";
 import type { InsertReport } from "@shared/schema";
 
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
@@ -332,22 +333,30 @@ export default function CreateReport() {
       <div>
         <Label className="text-sm font-semibold mb-2 block">Incident Type</Label>
         <div className="grid grid-cols-2 gap-2">
-          {INCIDENT_TYPES.map((type) => (
-            <button
-              key={type.value}
-              type="button"
-              onClick={() => setIncidentType(type.value)}
-              data-testid={`button-incident-${type.value}`}
-              className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium border transition-all ${
-                incidentType === type.value
-                  ? "border-primary bg-primary/10 text-foreground"
-                  : "border-border text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              <span className={`w-2.5 h-2.5 rounded-full ${type.color}`} />
-              {type.label}
-            </button>
-          ))}
+          {INCIDENT_TYPES.map((type) => {
+            const Art = INCIDENT_ART[type.value] || INCIDENT_ART.other;
+            const isVehicle = type.value === "reckless";
+            return (
+              <button
+                key={type.value}
+                type="button"
+                onClick={() => setIncidentType(type.value)}
+                data-testid={`button-incident-${type.value}`}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium border transition-all ${
+                  incidentType === type.value
+                    ? "border-primary bg-primary/10 text-foreground shadow-sm"
+                    : "border-border text-muted-foreground hover:bg-accent"
+                }`}
+              >
+                <Art
+                  className={`shrink-0 text-primary ${
+                    isVehicle ? "w-7 h-4" : "w-5 h-5"
+                  }`}
+                />
+                <span className="text-left leading-tight">{type.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

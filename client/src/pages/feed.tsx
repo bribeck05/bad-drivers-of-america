@@ -14,6 +14,53 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, ThumbsUp, ThumbsDown, MessageCircle, Eye, Clock, Car, Send, Lock, ChevronDown, ChevronUp, Bell, BellOff, Navigation } from "lucide-react";
 import type { Report, Comment } from "@shared/schema";
 import { INCIDENT_LABELS, INCIDENT_COLORS, formatTimeAgo } from "@/lib/utils";
+import { FlagShieldCar, FlagStripes, StarRow, Star } from "@/components/americana";
+import { RoadScene, RoadDivider, INCIDENT_ART } from "@/components/clipart";
+
+/**
+ * Patriotic hero banner shown at the top of the feed. Deep asphalt surface with
+ * a faint star field so the flag shield reads as the focal point.
+ */
+function UsaHero({ reportCount }: { reportCount: number }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl shadow-lg">
+      <div className="hero-asphalt">
+        <div className="star-field">
+          <div className="road-texture px-4 py-5">
+            <div className="flex items-center gap-4">
+              <FlagShieldCar className="w-14 h-16 shrink-0 text-white/25 drop-shadow-lg" />
+
+              <div className="min-w-0 flex-1">
+                <StarRow count={3} className="text-red-400/80 mb-1.5" />
+                <h1 className="font-display font-black text-white text-lg leading-none tracking-tight">
+                  Bad Drivers
+                  <span className="block text-[11px] font-bold tracking-[0.3em] text-white/50 mt-1">
+                    OF AMERICA
+                  </span>
+                </h1>
+                <p className="text-[11px] text-white/60 mt-2 leading-snug">
+                  Coast to coast, neighbors keeping neighbors safe.
+                </p>
+              </div>
+
+              <div className="text-right shrink-0 pl-2 border-l border-white/10">
+                <div className="font-display font-black text-2xl text-white tabular-nums leading-none">
+                  {reportCount.toLocaleString()}
+                </div>
+                <div className="text-[9px] font-bold uppercase tracking-wider text-white/45 mt-1">
+                  {reportCount === 1 ? "Report" : "Reports"}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <RoadDivider className="w-full h-3" />
+      <FlagStripes />
+    </div>
+  );
+}
+
 
 function NearbyAlerts() {
   const { toast } = useToast();
@@ -337,14 +384,26 @@ function FeedCard({ report, index }: { report: Report; index: number }) {
           )}
         </div>
       ) : (
-        <div className="relative h-32 hazard-stripes flex items-center justify-center overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-card/80 to-card/40" />
+        <div className="relative h-36 hazard-stripes flex flex-col items-center justify-center overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-card/90 to-card/60" />
           <Badge className={`absolute top-2 left-2 z-10 ${INCIDENT_COLORS[report.incidentType as keyof typeof INCIDENT_COLORS] || "bg-gray-500 text-white"} border-0 shadow-md`}>
             {INCIDENT_LABELS[report.incidentType as keyof typeof INCIDENT_LABELS] || "Other"}
           </Badge>
-          <span className="relative font-mono font-bold text-xl text-muted-foreground/30 tracking-wider">
+          {(() => {
+            const Art = INCIDENT_ART[report.incidentType] || INCIDENT_ART.other;
+            const isVehicle = report.incidentType === "reckless";
+            return (
+              <Art
+                className={`relative text-primary/70 drop-shadow-sm ${
+                  isVehicle ? "w-28 h-14" : "w-12 h-12"
+                }`}
+              />
+            );
+          })()}
+          <span className="relative mt-2 plate-chip px-2.5 py-1 rounded-md font-bold text-sm text-muted-foreground">
             {report.licensePlate}
           </span>
+          <RoadDivider className="absolute bottom-0 left-0 w-full h-2.5" />
         </div>
       )}
 
@@ -503,31 +562,33 @@ export default function Feed() {
 
   if (!reports || reports.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center text-center px-8 py-20">
-        <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mb-4">
-          <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8 text-muted-foreground" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 17l2-5h14l2 5v3H3z" />
-            <circle cx="7.5" cy="20" r="1.5" />
-            <circle cx="16.5" cy="20" r="1.5" />
-          </svg>
+      <div className="p-4 space-y-5">
+        <UsaHero reportCount={0} />
+        <div className="flex flex-col items-center justify-center text-center px-6 py-6">
+          <RoadScene className="w-full max-w-[300px] h-auto mb-5" />
+          <h3 className="font-display font-black text-lg mb-1">
+            No reports yet
+          </h3>
+          <p className="text-sm text-muted-foreground mb-6 max-w-xs leading-relaxed">
+            Be the first in the nation. Snap a photo, add the plate, and let
+            your community know.
+          </p>
+          <Link
+            href="/create"
+            data-testid="link-create-first"
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold text-sm px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-shadow"
+          >
+            <Star className="w-3.5 h-3.5" />
+            Report a Bad Driver
+          </Link>
         </div>
-        <h3 className="font-display font-bold text-lg mb-1">No reports yet</h3>
-        <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-          Be the first to report a bad driver. Snap a photo, add the plate, and let the community know.
-        </p>
-        <Link
-          href="/create"
-          data-testid="link-create-first"
-          className="bg-primary text-primary-foreground font-medium text-sm px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-shadow"
-        >
-          Report a Bad Driver
-        </Link>
       </div>
     );
   }
 
   return (
     <div className="p-4 space-y-4">
+      <UsaHero reportCount={reports.length} />
       <NearbyAlerts />
       <div className="flex items-center gap-2 mb-1">
         <div className="w-2 h-2 rounded-full bg-red-500 live-dot" />

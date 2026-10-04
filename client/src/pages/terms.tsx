@@ -1,25 +1,19 @@
 import { Link } from "wouter";
 import { Card } from "@/components/ui/card";
-import {
-  ShieldAlert,
-  CarFront,
-  EyeOff,
-  Ban,
-  Scale,
-  AlertTriangle,
-  ArrowLeft,
-} from "lucide-react";
+import { ShieldAlert, Scale, ArrowLeft } from "lucide-react";
+import { StopSign, WarningSign, TrafficCone, YieldSign } from "@/components/clipart";
+import { StarDivider } from "@/components/americana";
 
 const LAST_UPDATED = "October 4, 2026";
 
-/** Prominent, color-coded rule callout. */
+/** Prominent, color-coded rule callout fronted by a road sign. */
 function Rule({
-  icon: Icon,
+  art: Art,
   title,
   tone,
   children,
 }: {
-  icon: typeof ShieldAlert;
+  art: (props: { className?: string }) => JSX.Element;
   title: string;
   tone: "red" | "amber";
   children: React.ReactNode;
@@ -32,7 +26,7 @@ function Rule({
   return (
     <div className={`rounded-xl border p-4 ${tones[tone]}`}>
       <div className="flex items-start gap-3">
-        <Icon className="w-5 h-5 shrink-0 mt-0.5" />
+        <Art className="w-9 h-9 shrink-0 drop-shadow-sm" />
         <div className="min-w-0">
           <h3 className="font-display font-black text-sm uppercase tracking-wide">
             {title}
@@ -104,11 +98,9 @@ export default function Terms() {
 
       {/* The non-negotiable safety rules */}
       <div className="space-y-3">
-        <h2 className="font-display font-black text-sm uppercase tracking-[0.15em] text-muted-foreground">
-          The Non-Negotiable Rules
-        </h2>
+        <StarDivider label="The Non-Negotiable Rules" />
 
-        <Rule icon={CarFront} title="Never use this app while driving" tone="red">
+        <Rule art={StopSign} title="Never use this app while driving" tone="red">
           <p>
             <strong className="text-foreground">
               Do not open, browse, record, photograph, type, or submit anything
@@ -133,7 +125,7 @@ export default function Terms() {
           </p>
         </Rule>
 
-        <Rule icon={EyeOff} title="No names, addresses, or personal data" tone="red">
+        <Rule art={YieldSign} title="No names, addresses, or personal data" tone="red">
           <p>
             Do not post or request a person's{" "}
             <strong className="text-foreground">
@@ -156,7 +148,7 @@ export default function Terms() {
           </p>
         </Rule>
 
-        <Rule icon={Ban} title="Never follow, pursue, or confront anyone" tone="red">
+        <Rule art={TrafficCone} title="Never follow, pursue, or confront anyone" tone="red">
           <p>
             <strong className="text-foreground">
               Do not follow another driver to their home, workplace, school, or
@@ -177,7 +169,7 @@ export default function Terms() {
           </p>
         </Rule>
 
-        <Rule icon={AlertTriangle} title="Emergencies go to 911, not to us" tone="amber">
+        <Rule art={WarningSign} title="Emergencies go to 911, not to us" tone="amber">
           <p>
             This app is{" "}
             <strong className="text-foreground">not an emergency service</strong>{" "}
